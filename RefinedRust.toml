@@ -1,0 +1,4 @@
+output_dir = "rr_out"
+lib_load_paths = ["../external/refinedrust/stdlib"]
+check_overflows = true
+generate_dune_project = true

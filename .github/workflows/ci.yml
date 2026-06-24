@@ -1,0 +1,138 @@
+name: CI
+
+on:
+  push:
+    branches: [main]
+  pull_request:
+  merge_group:
+
+permissions:
+  contents: read
+
+env:
+  CARGO_TERM_COLOR: always
+
+jobs:
+
+  # ── Fast feedback: lint + test on stable ─────────────────────────────────
+  lint-and-test:
+    runs-on: ubuntu-latest
+    timeout-minutes: 10
+    steps:
+      - uses: actions/checkout@v4
+      - uses: dtolnay/rust-toolchain@29eef336d9b2848a0b548edc03f92a220660cdb8 # stable
+        with:
+          components: clippy, rustfmt
+      - uses: Swatinem/rust-cache@c19371144df3bb44fab255c43d04cbc2ab54d1c4 # v2.9.1
+
+      - name: Rustfmt
+        run: cargo fmt --all --check
+
+      - name: Clippy (default)
+        run: cargo clippy --all-targets -- -D warnings
+
+      - name: Clippy (simdutf8)
+        run: cargo clippy --all-targets --features simdutf8 -- -D warnings
+
+      - name: Tests (default)
+        run: cargo test
+
+      - name: Tests (simdutf8)
+        run: cargo test --features simdutf8
+
+      - name: Tests (avx2)
+        run: RUSTFLAGS="-Ctarget-feature=+avx2" cargo test
+
+      - name: Doc build
+        run: cargo doc --no-deps --features simdutf8
+
+  # ── MSRV check ───────────────────────────────────────────────────────────
+  # MSRV applies to the library; dev-deps (criterion, proptest) need newer
+  # Rust, so this checks --lib only.
+  msrv-check:
+    runs-on: ubuntu-latest
+    timeout-minutes: 10
+    env:
+      RUSTUP_TOOLCHAIN: '1.60'
+    steps:
+      - uses: actions/checkout@v4
+      - uses: dtolnay/rust-toolchain@67ef31d5b988238dd797d409d6f9574278e20537 # master
+        with:
+          toolchain: '1.60'
+      - name: Check (MSRV 1.60)
+        run: cargo check --lib
+      - name: Check (MSRV 1.60, simdutf8)
+        run: cargo check --lib --features simdutf8
+
+  # ── no_std and 32-bit compilation checks ─────────────────────────────────
+  check-nostd:
+    runs-on: ubuntu-latest
+    timeout-minutes: 10
+    steps:
+      - uses: actions/checkout@v4
+      - uses: dtolnay/rust-toolchain@29eef336d9b2848a0b548edc03f92a220660cdb8 # stable
+        with:
+          targets: i686-unknown-linux-gnu, thumbv7em-none-eabihf
+      - uses: Swatinem/rust-cache@c19371144df3bb44fab255c43d04cbc2ab54d1c4 # v2.9.1
+
+      - name: Check no_std (bare-metal ARM)
+        run: cargo check --lib --target thumbv7em-none-eabihf
+
+      - name: Check 32-bit
+        run: cargo check --lib --target i686-unknown-linux-gnu
+
+  # ── miri ─────────────────────────────────────────────────────────────────
+  miri:
+    runs-on: ubuntu-latest
+    timeout-minutes: 15
+    steps:
+      - uses: actions/checkout@v4
+      - uses: dtolnay/rust-toolchain@5b842231ba77f5c045dba54ac5560fed2db780e2 # nightly
+        with:
+          components: miri
+      - name: miri (strict provenance)
+        run: MIRIFLAGS="-Zmiri-strict-provenance" cargo miri test
+
+  # ── Fuzz smoke ───────────────────────────────────────────────────────────
+  # Short differential fuzz against core::str::from_utf8. Full fuzzing runs
+  # are out of band; this catches regressions cheaply.
+  fuzz-smoke:
+    runs-on: ubuntu-latest
+    timeout-minutes: 10
+    steps:
+      - uses: actions/checkout@v4
+      - uses: dtolnay/rust-toolchain@5b842231ba77f5c045dba54ac5560fed2db780e2 # nightly
+      - uses: Swatinem/rust-cache@c19371144df3bb44fab255c43d04cbc2ab54d1c4 # v2.9.1
+        with:
+          workspaces: fuzz
+      - name: Install cargo-fuzz
+        run: cargo install cargo-fuzz --locked
+      - name: Fuzz verify_vs_std
+        run: cargo fuzz run verify_vs_std -- -runs=200000 -max_len=4096
+      - name: Fuzz verify_with_slack
+        run: cargo fuzz run verify_with_slack -- -runs=200000 -max_len=4096
+      - name: Fuzz verify_with_slack (simdutf8)
+        run: cargo fuzz run verify_with_slack --features smoothutf8/simdutf8 -- -runs=200000 -max_len=4096
+
+  # ── Verus ────────────────────────────────────────────────────────────────
+  # Runs inside the verify-tools image (Verus + Z3 pinned by SHA). The image
+  # is built and pushed by verify-tools-image.yml; run that workflow once via
+  # workflow_dispatch before this job can succeed on a fresh repo.
+  verus:
+    runs-on: ubuntu-latest
+    timeout-minutes: 15
+    permissions:
+      contents: read
+      packages: read
+    container:
+      image: ghcr.io/${{ github.repository }}/verify-tools:latest
+      credentials:
+        username: ${{ github.actor }}
+        password: ${{ secrets.GITHUB_TOKEN }}
+    steps:
+      - uses: actions/checkout@v4
+      - name: cargo verus verify
+        run: |
+          cargo verus verify --features verus 2>&1 | tee /tmp/verus.out
+          # Fail if the count is anything other than the expected 72/0.
+          grep -q "verification results:: 72 verified, 0 errors" /tmp/verus.out

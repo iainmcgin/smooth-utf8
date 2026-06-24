@@ -1,0 +1,63 @@
+[package]
+name = "smoothutf8"
+version = "0.1.0"
+edition = "2021"
+rust-version = "1.60"
+license = "Apache-2.0"
+description = "Portable, formally verified UTF-8 validation with an optional slack-buffer fast path for zero-copy parsers"
+repository = "https://github.com/iainmcgin/smooth-utf8"
+readme = "README.md"
+keywords = ["utf8", "validation", "verified", "no_std", "parser"]
+categories = ["encoding", "no-std", "no-std::no-alloc", "parser-implementations"]
+exclude = [
+    "/.github",
+    "/.cargo",
+    "/examples",
+    "/verify/Dockerfile.tools",
+    "/verify/rr-check.sh",
+    "/RefinedRust.toml",
+    "/doc/gen-throughput-svg.py",
+    "/doc/gen-throughput-relative-svg.py",
+    "/doc/parse-criterion-log.py",
+]
+
+[dependencies]
+# Optional: delegate inputs >= LONG_THRESHOLD bytes to simdutf8's
+# Keiser-Lemire SIMD validator. Default-off; the crate stays zero-dep
+# without it and falls back to the (Verus-verified) SWAR / cfg-AVX2 path.
+simdutf8 = { version = "0.1", optional = true, default-features = false }
+
+# Verus verification deps. Optional: the published crate is zero-dependency
+# unless `--features verus` is set (which only the verification CI job does).
+# Pinned to the exact crates.io versions that match the Verus build in the
+# verify-tools image.
+verus_builtin        = { version = "=0.0.0-2026-05-17-0151", optional = true }
+verus_builtin_macros = { version = "=0.0.0-2026-06-14-0213", optional = true }
+vstd                 = { version = "=0.0.0-2026-06-14-0213", optional = true, default-features = false }
+
+[features]
+simdutf8 = ["dep:simdutf8"]
+verus = ["dep:verus_builtin", "dep:verus_builtin_macros", "dep:vstd"]
+
+[dev-dependencies]
+proptest = "1"
+criterion = "0.5"
+simdutf8 = "0.1"
+
+[[bench]]
+name = "throughput"
+harness = false
+
+[lints.rust]
+unexpected_cfgs = { level = "warn", check-cfg = ['cfg(rr)', 'cfg(verus_keep_ghost)'] }
+
+[package.metadata.verus]
+verify = true
+
+[profile.bench]
+lto = true
+codegen-units = 1
+
+[profile.release]
+lto = true
+codegen-units = 1

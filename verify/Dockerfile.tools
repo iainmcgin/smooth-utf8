@@ -1,0 +1,52 @@
+# Verification toolchain image: Verus (SMT-backed).
+#
+# Verus is the CI verification gate for smoothutf8. The RefinedRust
+# foundational proof of the raw-pointer leaf loads is reproducible from a
+# nix flake (see verify/REFINEDRUST.md) but is not built here — its Rocq
+# toolchain is large and the leaf bodies it covers are stable.
+#
+# Verus is pinned by commit so proofs are reproducible against a known
+# prover version.
+#
+# Build and push:
+#   docker buildx build -t ghcr.io/iainmcgin/smooth-utf8/verify-tools:$(git rev-parse --short HEAD) \
+#       --push -f verify/Dockerfile.tools .
+
+FROM rust:1.96.0-bookworm AS verus-builder
+
+ARG VERUS_REV=911e4e70ed8e90888bef4b2e4bc6ce5534e65be4
+
+RUN rustup component add rustc-dev llvm-tools rustfmt \
+    && apt-get update && apt-get install -y --no-install-recommends \
+       git unzip wget \
+    && rm -rf /var/lib/apt/lists/*
+
+RUN git clone https://github.com/verus-lang/verus.git /verus \
+    && git -C /verus checkout ${VERUS_REV}
+
+WORKDIR /verus/source
+# tools/activate only supports bash/zsh; do what it does directly: build
+# the vargo wrapper, then invoke it.
+RUN ./tools/get-z3.sh \
+    && cargo build --release --manifest-path ../tools/vargo/Cargo.toml \
+    && ../tools/vargo/target/release/vargo build --release
+
+# ── Final image ────────────────────────────────────────────────────────────
+
+FROM rust:1.96.0-bookworm
+
+COPY --from=verus-builder /verus/source/target-verus/release /opt/verus
+COPY --from=verus-builder /verus/source/vstd                 /opt/verus/vstd-src
+COPY --from=verus-builder /verus/source/builtin              /opt/verus/builtin-src
+COPY --from=verus-builder /verus/source/builtin_macros       /opt/verus/builtin_macros-src
+
+RUN rustup component add rustc-dev llvm-tools
+
+ENV PATH=/opt/verus:$PATH \
+    VERUS_Z3_PATH=/opt/verus/z3
+
+RUN verus --version
+
+LABEL org.opencontainers.image.source="https://github.com/iainmcgin/smooth-utf8" \
+      org.opencontainers.image.description="Verus verification toolchain for smoothutf8" \
+      org.opencontainers.image.licenses="Apache-2.0"

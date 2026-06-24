@@ -1,0 +1,27 @@
+[package]
+name = "smoothutf8-fuzz"
+version = "0.0.0"
+edition = "2021"
+publish = false
+
+[package.metadata]
+cargo-fuzz = true
+
+[dependencies]
+libfuzzer-sys = "0.4"
+arbitrary = { version = "1", features = ["derive"] }
+smoothutf8 = { path = ".." }
+
+[workspace]
+
+[[bin]]
+name = "verify_vs_std"
+path = "fuzz_targets/verify_vs_std.rs"
+test = false
+doc = false
+
+[[bin]]
+name = "verify_with_slack"
+path = "fuzz_targets/verify_with_slack.rs"
+test = false
+doc = false

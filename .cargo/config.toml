@@ -1,0 +1,12 @@
+# 64-byte block alignment for benchmarks: without this, the 7-instruction
+# ASCII fast-path loop is small enough that whichever monomorphization's
+# back-edge straddles a 32B DSB µop-cache line in a given binary runs ~35%
+# slower than the other — a code-layout lottery, not an algorithmic
+# difference. This is the same setting buffa's historical bench runs use
+# (see buffa/benchmarks/history/annotations.md), where it collapsed a 19%
+# cross-release spread to 2.5%.
+#
+# Applied via build.rustflags so it covers `cargo bench` and
+# `cargo build --release --example microbench` alike.
+[build]
+rustflags = ["-Cllvm-args=-align-all-nofallthru-blocks=6"]

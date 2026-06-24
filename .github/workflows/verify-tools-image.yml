@@ -1,0 +1,108 @@
+name: Build verification tools image
+
+# Builds the Verus toolchain image and pushes it to GHCR. Runs only when
+# the recipe or the pinned Verus revision changes, or on manual dispatch.
+
+on:
+  workflow_dispatch:
+    inputs:
+      verus_rev:
+        description: 'Verus commit (github.com/verus-lang/verus)'
+        required: false
+  push:
+    branches: [main]
+    paths: ['verify/Dockerfile.tools']
+
+permissions:
+  contents: read
+  packages: write
+  id-token: write
+  attestations: write
+
+env:
+  REGISTRY: ghcr.io
+  IMAGE_BASE: ghcr.io/${{ github.repository }}/verify-tools
+
+jobs:
+  build:
+    runs-on: ubuntu-latest
+    timeout-minutes: 60
+
+    steps:
+      - uses: actions/checkout@v4
+
+      - name: Set up Docker Buildx
+        uses: docker/setup-buildx-action@8d2750c68a42422c14e847fe6c8ac0403b4cbd6f # v3.12.0
+
+      - name: Log in to GHCR
+        uses: docker/login-action@c94ce9fb468520275223c153574b00df6fe4bcc9 # v3.7.0
+        with:
+          registry: ${{ env.REGISTRY }}
+          username: ${{ github.actor }}
+          password: ${{ secrets.GITHUB_TOKEN }}
+
+      - name: Resolve revision
+        id: revs
+        env:
+          IN_VS: ${{ inputs.verus_rev }}
+        run: |
+          vs=${IN_VS:-$(grep '^ARG VERUS_REV=' verify/Dockerfile.tools | cut -d= -f2)}
+          if ! printf '%s' "$vs" | grep -Eq '^[0-9a-f]{7,40}$'; then
+            echo "::error::revision '$vs' is not a bare git SHA"; exit 1
+          fi
+          echo "vs=$vs"               >> "$GITHUB_OUTPUT"
+          echo "tag=verus-${vs:0:12}" >> "$GITHUB_OUTPUT"
+
+      - name: Build and push
+        id: build
+        uses: docker/build-push-action@10e90e3645eae34f1e60eeb005ba3a3d33f178e8 # v6.19.2
+        with:
+          context: .
+          file: verify/Dockerfile.tools
+          platforms: linux/amd64
+          push: true
+          tags: |
+            ${{ env.IMAGE_BASE }}:${{ steps.revs.outputs.tag }}
+            ${{ env.IMAGE_BASE }}:latest
+          build-args: |
+            VERUS_REV=${{ steps.revs.outputs.vs }}
+          provenance: mode=max
+          sbom: true
+          cache-from: type=gha,scope=verify-tools
+          cache-to:   type=gha,scope=verify-tools,mode=max
+
+      # GitHub's attestation API and Sigstore keyless signing both require
+      # the repo to be public (the OIDC identity is the repo path). Skip
+      # while private; the image is still pushed and usable by CI.
+      - name: Attest build provenance
+        if: ${{ github.event.repository.visibility == 'public' }}
+        uses: actions/attest-build-provenance@v4
+        with:
+          subject-name: ${{ env.IMAGE_BASE }}
+          subject-digest: ${{ steps.build.outputs.digest }}
+          push-to-registry: true
+
+      - uses: sigstore/cosign-installer@7e8b541eb2e61bf99390e1afd4be13a184e9ebc5 # v3.10.1
+        if: ${{ github.event.repository.visibility == 'public' }}
+      - name: Sign image
+        if: ${{ github.event.repository.visibility == 'public' }}
+        env:
+          IMAGE_DIGEST: ${{ env.IMAGE_BASE }}@${{ steps.build.outputs.digest }}
+        run: cosign sign --yes "$IMAGE_DIGEST"
+
+      - name: Summary
+        env:
+          IMAGE_BASE: ${{ env.IMAGE_BASE }}
+          TAG: ${{ steps.revs.outputs.tag }}
+          VS:  ${{ steps.revs.outputs.vs }}
+          DIGEST: ${{ steps.build.outputs.digest }}
+        run: |
+          {
+            echo "### Verification tools image"
+            echo "| | |"
+            echo "|---|---|"
+            echo "| Image | \`${IMAGE_BASE}:${TAG}\` |"
+            echo "| Digest | \`${DIGEST}\` |"
+            echo "| Verus | \`${VS}\` |"
+            echo "| Platforms | \`linux/amd64\` |"
+          } >> "$GITHUB_STEP_SUMMARY"
