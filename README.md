@@ -1,5 +1,13 @@
 # smoothutf8
 
+[![crates.io](https://img.shields.io/crates/v/smoothutf8.svg)](https://crates.io/crates/smoothutf8)
+[![docs.rs](https://img.shields.io/docsrs/smoothutf8)](https://docs.rs/smoothutf8)
+[![CI](https://github.com/iainmcgin/smooth-utf8/actions/workflows/ci.yml/badge.svg?branch=main)](https://github.com/iainmcgin/smooth-utf8/actions/workflows/ci.yml)
+[![MSRV](https://img.shields.io/crates/msrv/smoothutf8)](Cargo.toml)
+[![deps.rs](https://deps.rs/repo/github/iainmcgin/smooth-utf8/status.svg)](https://deps.rs/repo/github/iainmcgin/smooth-utf8)
+[![no_std](https://img.shields.io/badge/no__std-compatible-blue)](https://docs.rs/smoothutf8)
+[![License](https://img.shields.io/crates/l/smoothutf8)](LICENSE)
+
 > Smooth sailing across input sizes and CPU architectures.
 
 Portable, formally verified UTF-8 validation for Rust — `#![no_std]`, zero-dependency by default, tuned for the short strings typical of serialized protocols. The portable build is mechanically verified for **functional correctness** against Unicode §3.9 Table 3-7; see [Verification](#verification) for what that does and does not cover.
