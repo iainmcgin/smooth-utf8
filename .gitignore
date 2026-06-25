@@ -1,5 +1,4 @@
 /target
-/Cargo.lock
 /proptest-regressions
 /rr_out
 .lia.cache

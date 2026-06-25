@@ -1,5 +1,9 @@
 # Changelog
 
+## 0.1.1
+
+- Fix: the `simdutf8` feature now enables `simdutf8/std`, so simdutf8's runtime CPU-feature dispatch is active on the default x86-64 target. In 0.1.0 the dependency was pulled with `default-features = false` and `std` was never re-enabled, so without `-C target-cpu=x86-64-v3` (or another build that sets `target_feature = "avx2"`/`"sse4.2"` at compile time) simdutf8 fell back to `core::str::from_utf8` and the ≥128-byte delegation in `verify`/`verify_with_slack` was silently scalar. Correctness was unaffected.
+
 ## 0.1.0
 
 Initial release.
