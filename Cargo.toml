@@ -1,6 +1,6 @@
 [package]
 name = "smoothutf8"
-version = "0.1.0"
+version = "0.1.1"
 edition = "2021"
 rust-version = "1.60"
 license = "Apache-2.0"
@@ -36,7 +36,10 @@ verus_builtin_macros = { version = "=0.0.0-2026-06-14-0213", optional = true }
 vstd                 = { version = "=0.0.0-2026-06-14-0213", optional = true, default-features = false }
 
 [features]
-simdutf8 = ["dep:simdutf8"]
+# simdutf8/std is required for runtime CPU-feature dispatch on x86-64; without
+# it, simdutf8 only selects AVX2/SSE4.2 at compile time via target_feature and
+# otherwise re-exports core::str::from_utf8 as its fallback.
+simdutf8 = ["dep:simdutf8", "simdutf8/std"]
 verus = ["dep:verus_builtin", "dep:verus_builtin_macros", "dep:vstd"]
 
 [dev-dependencies]
