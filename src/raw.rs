@@ -57,7 +57,7 @@ pub unsafe fn load64_raw(ptr: *const u8, at: usize) -> u64 {
 #[cfg_attr(rr, rr::exists("v" : "Z"))]
 #[cfg_attr(rr, rr::returns("v"))]
 #[inline(always)]
-#[cfg(target_pointer_width = "64")]
+#[cfg(any(target_pointer_width = "64", target_arch = "wasm32"))]
 pub unsafe fn load8_raw(ptr: *const u8, at: usize) -> u8 {
     // SAFETY: caller guarantees `at + 1 ≤ n` initialized bytes at `ptr`.
     // `read_unaligned::<u8>` is identical to `read::<u8>` (alignment 1) and

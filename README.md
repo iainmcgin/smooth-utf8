@@ -45,21 +45,22 @@ This is the ASCII picture; the per-shape numbers for non-ASCII input are in the 
 
 **`verify(b: &[u8]) -> bool`** — the safe default. Functionally equivalent to `core::str::from_utf8(b).is_ok()`. Use this unless you can guarantee readable bytes after your input. **`to_str(b) -> Option<&str>`** is the same check returning the string view on success.
 
-**`unsafe verify_with_slack(buf: &[u8], range: Range<usize>) -> bool`** — for zero-copy parsers that maintain at least `SLACK` (8) readable bytes after every logical field. The classic example is a protobuf decoder validating a string field at `buf[start..end]` inside a larger wire buffer: there is always more data after `end` (the next field's tag, or the decoder's sentinel padding), so the precondition is free to satisfy. This skips the per-string tail copy, which is the dominant cost on inputs of a few bytes.
+**`SlackBuf<'a>`** — for zero-copy parsers that maintain at least `SLACK` (8) readable bytes after every logical field. The classic example is a protobuf decoder validating string fields inside a larger wire buffer: there is always more data after each field's end (the next field's tag, or the decoder's sentinel padding), so the invariant is free to satisfy. Construct the `SlackBuf` once per buffer; per-field `verify` / `to_str` / `le_u32` calls are then safe and skip the per-string tail copy, which is the dominant cost on inputs of a few bytes.
 
 ```rust
-use smoothutf8::{verify_with_slack, SLACK};
+use smoothutf8::SlackBuf;
 
-// Inside a length-delimited field decoder, after reading the length prefix:
+// Transport layer finishes reading the frame into a Vec, then:
+let buf = SlackBuf::new_add_slack(&mut wire);  // appends SLACK zero bytes; needs feature = "alloc"
+// — or, if you padded yourself / are using BytesMut etc.:
+// let buf = SlackBuf::new_embedded_slack(&wire);
+
+// Inside the length-delimited field decoder, per string field:
 let field_end = pos + field_len;
-debug_assert!(field_end + SLACK <= wire_buf.len()); // your decoder's invariant
-// SAFETY: the eps-copy buffer guarantees SLACK readable bytes after every field.
-if !unsafe { verify_with_slack(wire_buf, pos..field_end) } {
-    return Err(DecodeError::InvalidUtf8);
-}
+let s: &str = buf.to_str(pos..field_end).ok_or(DecodeError::InvalidUtf8)?;
 ```
 
-The two share the same hot loop; on inputs ≥16 bytes they are equivalent. The `unsafe` entry point exists only to shave the ~5 ns tail cost on inputs shorter than that.
+`SlackBuf::verify` and `verify` share the same hot loop; on inputs ≥16 bytes they are equivalent. The slack path exists only to shave the ~5 ns tail cost on inputs shorter than that. `unsafe verify_with_slack(buf, range)` is the underlying per-call entry point and remains available; prefer `SlackBuf` for new code.
 
 ## Build configurations
 
@@ -77,7 +78,7 @@ The verified path runs unconditionally for inputs <128 bytes in all configuratio
 
 ### 32-bit targets
 
-On targets where `target_pointer_width != "64"` (Cortex-M, i686, riscv32, …) the multibyte path delegates to `core::str::from_utf8` and the 2 KB DFA table is compiled out entirely. The shift-DFA's `(ROW[byte] >> state) & 63` is one instruction on AArch64 and 3–5 on x86-64, but ~10 on i686 (`shrd`/`cmov`) and ~13 on Cortex-M4 (emulated 64-bit shift plus two loads), so the standard library's branchy validator is the better choice there. The SWAR ASCII fast path and the slack-mode tail handling are kept regardless, so short-ASCII inputs still benefit. This is slightly conservative — `wasm32` has native i64 and would run the DFA fine, but the fallback is not slow, just not optimal. CI checks `thumbv7em-none-eabihf` and `i686-unknown-linux-gnu`.
+On 32-bit targets other than `wasm32` (Cortex-M, i686, riscv32, …) the multibyte path delegates to `core::str::from_utf8` and the 2 KB DFA table is compiled out entirely. The shift-DFA's `(ROW[byte] >> state) & 63` is one instruction on AArch64 and 3–5 on x86-64, but ~10 on i686 (`shrd`/`cmov`) and ~13 on Cortex-M4 (emulated 64-bit shift plus two loads), so the standard library's branchy validator is the better choice there. `wasm32` is opted in explicitly: it has native `i64.shr_u`, so the DFA runs at full speed even though pointers are 32-bit. The SWAR ASCII fast path and the slack-mode tail handling are kept on every target, so short-ASCII inputs still benefit. CI checks `thumbv7em-none-eabihf`, `i686-unknown-linux-gnu`, and `wasm32-unknown-unknown`.
 
 ## Verification
 

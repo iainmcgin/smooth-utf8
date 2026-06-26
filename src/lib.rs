@@ -8,11 +8,18 @@
 //!   partial chunk with an in-bounds stack copy so that it never reads past
 //!   the slice.
 //!
-//! - [`verify_with_slack`] is an `unsafe` variant for zero-copy parsers that
-//!   maintain at least [`SLACK`] readable bytes after every logical field
-//!   (the "eps-copy" pattern used by hyperpb and UPB). It reads up to
-//!   `SLACK - 1` bytes past the logical end and masks them off, which removes
-//!   the per-string tail-handling cost.
+//! - [`SlackBuf`] is the safe wrapper for zero-copy parsers that maintain at
+//!   least [`SLACK`] readable bytes after every logical field (the "eps-copy"
+//!   pattern used by hyperpb and UPB). The padding invariant is established
+//!   once at the buffer level — typically via `SlackBuf::new_add_slack`
+//!   (with `feature = "alloc"`) or [`SlackBuf::new_embedded_slack`] — and
+//!   per-field
+//!   [`verify`](SlackBuf::verify) / [`to_str`](SlackBuf::to_str) /
+//!   [`le_u32`](SlackBuf::le_u32) calls are then safe and skip the per-string
+//!   tail-handling cost.
+//!
+//!   [`verify_with_slack`] is the underlying `unsafe` per-call entry point;
+//!   prefer [`SlackBuf`] for new code.
 //!
 //! Both share the same multi-byte path: a shift-encoded DFA (the
 //! Vognsen/Langdale encoding of Höhrmann's UTF-8 automaton).
@@ -21,6 +28,8 @@
 //!
 //! # Features
 //!
+//! - **`alloc`** — adds `SlackBuf::new_add_slack`, which appends the padding
+//!   to a `Vec<u8>` itself. Everything else stays no-alloc.
 //! - **`simdutf8`** — delegate inputs ≥ 128 bytes to
 //!   [`simdutf8::basic::from_utf8`](https://docs.rs/simdutf8). Adds one
 //!   dependency. Below the threshold the verified path runs.
@@ -187,6 +196,10 @@ pub fn to_str(b: &[u8]) -> Option<&str> {
 
 /// Returns `true` if `buf[range]` is well-formed UTF-8, using the slack-buffer
 /// fast path.
+///
+/// Prefer [`SlackBuf`] for new code: it hoists this function's per-call
+/// `unsafe` precondition to a buffer-level type invariant, so per-field
+/// validation is safe.
 ///
 /// This variant performs unaligned 8-byte loads that may read up to
 /// [`SLACK`] − 1 bytes past `range.end`. Those bytes are masked off and never
@@ -421,7 +434,7 @@ unsafe fn load64(buf: &[u8], at: usize) -> u64 {
     ensures ret == buf@[at as int],
 ))]
 #[inline(always)]
-#[cfg(target_pointer_width = "64")]
+#[cfg(any(target_pointer_width = "64", target_arch = "wasm32"))]
 unsafe fn load8(buf: &[u8], at: usize) -> u8 {
     da!(at < buf.len());
     // SAFETY: `at < buf.len()`; see `load64`.
@@ -588,11 +601,11 @@ fn verify_impl<const PAD: usize, T: Tail<PAD>>(buf: &[u8], range: Range<usize>) 
 // `core::str::from_utf8` instead, and the tables below are dead `const`s
 // (no runtime footprint). The ASCII fast path above is kept regardless.
 //
-// `target_pointer_width` is a proxy for "has native u64 ops". It is slightly
-// conservative — wasm32 has native i64 but is gated out here — but the
-// fallback is `core::str::from_utf8`, which is fine, not a footgun.
+// `target_pointer_width` is a proxy for "has native u64 ops". wasm32 is opted
+// in explicitly: it has native `i64.shr_u`, so the DFA runs at full speed even
+// though pointers are 32-bit.
 
-#[cfg(not(target_pointer_width = "64"))]
+#[cfg(not(any(target_pointer_width = "64", target_arch = "wasm32")))]
 #[inline]
 fn verify_multibyte(buf: &[u8], start: usize, end: usize) -> bool {
     core::str::from_utf8(&buf[start..end]).is_ok()
@@ -725,7 +738,7 @@ row_check! {
     ensures ret == spec_row(byte),
 ))]
 #[inline(always)]
-#[cfg(target_pointer_width = "64")]
+#[cfg(any(target_pointer_width = "64", target_arch = "wasm32"))]
 const fn row(byte: u8) -> u64 {
     ROW[byte as usize]
 }
@@ -779,7 +792,7 @@ const _CHECK_SPEC_ROW: () = {
     ensures ret == spec_step(state, byte), is_state(ret),
 ))]
 #[inline(always)]
-#[cfg(target_pointer_width = "64")]
+#[cfg(any(target_pointer_width = "64", target_arch = "wasm32"))]
 const fn step(state: u64, byte: u8) -> u64 {
     #[cfg(feature = "verus")]
     proof! { lemma_row_step(state, byte); }
@@ -797,7 +810,7 @@ const fn step(state: u64, byte: u8) -> u64 {
     ensures
         ret == is_valid_utf8(buf@.subrange(start as int, end as int)),
 ))]
-#[cfg(target_pointer_width = "64")]
+#[cfg(any(target_pointer_width = "64", target_arch = "wasm32"))]
 #[inline]
 #[allow(clippy::cast_possible_truncation)] // `(w >> 8k) as u8` is byte extraction
 #[allow(clippy::too_many_lines)] // proof annotations
