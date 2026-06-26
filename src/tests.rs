@@ -24,8 +24,24 @@ fn check(b: &[u8]) {
 
     let (buf, range) = with_slack(b);
     // SAFETY: `with_slack` guarantees `range.end + SLACK == buf.len()`.
-    let got = unsafe { verify_with_slack(&buf, range) };
+    let got = unsafe { verify_with_slack(&buf, range.clone()) };
     assert_eq!(got, want, "verify_with_slack mismatch on {b:x?}");
+
+    let sb = SlackBuf::new(&buf).unwrap();
+    assert_eq!(
+        sb.verify(range.clone()),
+        want,
+        "SlackBuf::verify mismatch on {b:x?}"
+    );
+    assert_eq!(
+        sb.to_str(range),
+        if want {
+            core::str::from_utf8(b).ok()
+        } else {
+            None
+        },
+        "SlackBuf::to_str mismatch on {b:x?}",
+    );
 }
 
 #[test]
@@ -164,6 +180,54 @@ fn slack_garbage_is_masked() {
     assert!(unsafe { verify_with_slack(&buf, 0..3) });
 }
 
+#[test]
+fn slackbuf_new_rejects_short() {
+    assert!(SlackBuf::new(&[0u8; SLACK - 1]).is_none());
+    assert!(SlackBuf::new(&[0u8; SLACK]).is_some());
+}
+
+#[test]
+fn slackbuf_payload_len_and_as_bytes() {
+    let buf = [0u8; SLACK + 5];
+    let sb = SlackBuf::new(&buf).unwrap();
+    assert_eq!(sb.payload_len(), 5);
+    assert_eq!(sb.as_bytes().len(), buf.len());
+}
+
+#[test]
+fn slackbuf_le_u32() {
+    let mut buf = [0u8; SLACK + 4];
+    buf[0..4].copy_from_slice(&0xDEAD_BEEFu32.to_le_bytes());
+    buf[4..8].copy_from_slice(&0xCAFE_1234u32.to_le_bytes());
+    let sb = SlackBuf::new(&buf).unwrap();
+    assert_eq!(sb.le_u32(0), 0xDEAD_BEEF);
+    // `at == payload_len()` is the boundary: reads entirely from the slack
+    // region, which is in-bounds and well-defined.
+    assert_eq!(sb.le_u32(4), 0xCAFE_1234);
+}
+
+#[test]
+#[should_panic(expected = "range.start <= range.end")]
+#[allow(clippy::reversed_empty_ranges)] // exercising the panic path
+fn slackbuf_verify_panics_on_inverted_range() {
+    let buf = [0u8; SLACK + 4];
+    let _ = SlackBuf::new(&buf).unwrap().verify(2..1);
+}
+
+#[test]
+#[should_panic(expected = "range.end <= self.payload_len()")]
+fn slackbuf_verify_panics_on_oob_end() {
+    let buf = [0u8; SLACK + 4];
+    let _ = SlackBuf::new(&buf).unwrap().verify(0..5);
+}
+
+#[test]
+#[should_panic(expected = "at <= self.payload_len()")]
+fn slackbuf_le_u32_panics_on_oob() {
+    let buf = [0u8; SLACK + 4];
+    let _ = SlackBuf::new(&buf).unwrap().le_u32(5);
+}
+
 #[cfg(not(miri))] // proptest needs `-Zmiri-disable-isolation`; table tests cover miri
 proptest! {
     #![proptest_config(ProptestConfig::with_cases(2048))]
@@ -192,5 +256,7 @@ proptest! {
         // SAFETY: `end + SLACK == buf.len()` and `start <= end`.
         let got = unsafe { verify_with_slack(&buf, start..end) };
         prop_assert_eq!(got, want);
+        let sb = SlackBuf::new(&buf).unwrap();
+        prop_assert_eq!(sb.verify(start..end), want);
     }
 }

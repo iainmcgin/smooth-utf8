@@ -126,6 +126,18 @@ fn bench_shape(c: &mut Criterion, shape: &'static str) {
                 });
             },
         );
+
+        // Safe SlackBuf::verify. `sb` is constructed once per buffer
+        // (modelling once-per-message); the per-iter call measures the
+        // range-check overhead vs `smoothutf8_slack` above.
+        g.bench_with_input(
+            BenchmarkId::new("smoothutf8_slackbuf", n),
+            &(&buf, end),
+            |b, (p, e)| {
+                let sb = smoothutf8::SlackBuf::new(p).unwrap();
+                b.iter(|| black_box(black_box(sb).verify(0..*e)));
+            },
+        );
     }
     g.finish();
 }

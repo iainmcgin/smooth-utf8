@@ -238,6 +238,125 @@ pub unsafe fn verify_with_slack(buf: &[u8], range: Range<usize>) -> bool {
     verify_impl::<SLACK, SlackTail>(buf, range)
 }
 
+// -- SlackBuf: safe wrapper over the slack-buffer invariant ------------------
+//
+// Verus specs are not yet written for this surface (issue #5); the wrapper is
+// gated out of the verus build until they are. The underlying `verify_impl`
+// path it calls is the same verified code.
+#[cfg(not(feature = "verus"))]
+pub use slack_buf::SlackBuf;
+
+#[cfg(not(feature = "verus"))]
+mod slack_buf {
+    use super::{verify_with_slack, Range, SLACK};
+
+    /// A borrowed byte buffer whose final [`SLACK`] bytes are padding.
+    ///
+    /// Any read of width up to `SLACK` starting at a position `≤`
+    /// [`payload_len`](Self::payload_len) stays in bounds, so per-field
+    /// validation and fixed-width loads need no `unsafe` at the call site.
+    #[repr(transparent)]
+    #[derive(Clone, Copy, Debug)]
+    pub struct SlackBuf<'a>(&'a [u8]);
+
+    // `le_u32`'s SAFETY argument relies on this; pin it at compile time so a
+    // future change to `SLACK` cannot silently make the load OOB.
+    const _: () = assert!(SLACK >= 4);
+
+    impl<'a> SlackBuf<'a> {
+        /// Wraps `buf` without checking the length invariant.
+        ///
+        /// # Safety
+        /// `buf.len() >= SLACK`.
+        #[inline]
+        #[must_use]
+        pub const unsafe fn new_unchecked(buf: &'a [u8]) -> Self {
+            debug_assert!(buf.len() >= SLACK);
+            Self(buf)
+        }
+
+        /// Wraps `buf`, or returns `None` if `buf.len() < SLACK`.
+        #[inline]
+        #[must_use]
+        pub const fn new(buf: &'a [u8]) -> Option<Self> {
+            if buf.len() >= SLACK {
+                Some(Self(buf))
+            } else {
+                None
+            }
+        }
+
+        /// The full backing slice, including the trailing slack bytes.
+        #[inline]
+        #[must_use]
+        pub const fn as_bytes(&self) -> &'a [u8] {
+            self.0
+        }
+
+        /// `as_bytes().len() - SLACK`: the largest valid `range.end` for
+        /// [`verify`](Self::verify) and the largest valid `at` for the
+        /// fixed-width loads.
+        #[inline]
+        #[must_use]
+        pub const fn payload_len(&self) -> usize {
+            self.0.len() - SLACK
+        }
+
+        /// Returns `true` if `self.as_bytes()[range]` is well-formed UTF-8,
+        /// using the slack-buffer fast path.
+        ///
+        /// # Panics
+        /// If `range.start > range.end` or `range.end > self.payload_len()`.
+        #[inline]
+        #[must_use]
+        pub fn verify(&self, range: Range<usize>) -> bool {
+            // One combined assert (not two) so there is a single panic call
+            // site and the function stays prologue-free for the tail call.
+            assert!(range.start <= range.end && range.end <= self.payload_len());
+            // SAFETY: the assert establishes both of `verify_with_slack`'s
+            // preconditions (`start <= end` and `end + SLACK <= len`, given the
+            // type invariant `len >= SLACK`).
+            unsafe { verify_with_slack(self.0, range) }
+        }
+
+        /// Returns `Some(self.as_bytes()[range] as &str)` if the range is
+        /// well-formed UTF-8. Single-scan; the returned slice borrows the
+        /// backing buffer for `'a`.
+        ///
+        /// # Panics
+        /// Same conditions as [`verify`](Self::verify).
+        #[inline]
+        #[must_use]
+        pub fn to_str(&self, range: Range<usize>) -> Option<&'a str> {
+            if self.verify(range.clone()) {
+                // SAFETY: `verify`'s asserts established
+                // `range.start <= range.end <= len - SLACK <= len`, so
+                // `get_unchecked(range)` is in-bounds; `verify` returned true,
+                // so the bytes are valid UTF-8.
+                Some(unsafe { core::str::from_utf8_unchecked(self.0.get_unchecked(range)) })
+            } else {
+                None
+            }
+        }
+
+        /// Loads 4 bytes at `at..at+4` as a little-endian `u32`. The slack
+        /// invariant (`SLACK >= 4`) makes this a single unaligned load with no
+        /// tail handling.
+        ///
+        /// # Panics
+        /// If `at > self.payload_len()`.
+        #[inline]
+        #[must_use]
+        pub fn le_u32(&self, at: usize) -> u32 {
+            assert!(at <= self.payload_len());
+            // SAFETY: `at <= len - SLACK` and `SLACK >= 4` (const-asserted
+            // above), so `at + 4 <= len`; `as_ptr()` carries provenance over
+            // the full slice and `read_unaligned` avoids alignment UB.
+            u32::from_le(unsafe { self.0.as_ptr().add(at).cast::<u32>().read_unaligned() })
+        }
+    }
+}
+
 // -- leaf loads (Verus-trusted, RefinedRust-verified) ------------------------
 
 /// Load 8 bytes at `buf[at..at+8]` as a little-endian `u64`.
