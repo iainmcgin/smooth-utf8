@@ -255,30 +255,98 @@ pub unsafe fn verify_with_slack(buf: &[u8], range: Range<usize>) -> bool {
 }
 
 // -- SlackBuf: safe wrapper over the slack-buffer invariant ------------------
-//
-// Verus specs are not yet written for this surface (issue #5); the wrapper is
-// gated out of the verus build until they are. The underlying `verify_impl`
-// path it calls is the same verified code.
-#[cfg(not(feature = "verus"))]
+
 pub use slack_buf::SlackBuf;
 
-#[cfg(not(feature = "verus"))]
 mod slack_buf {
+    #[cfg(feature = "verus")]
+    use super::{is_valid_utf8, verus_spec, verus_verify};
     use super::{verify_with_slack, Range, SLACK};
+    #[cfg(feature = "verus")]
+    #[allow(unused_imports)]
+    use vstd::prelude::*;
 
     /// A borrowed byte buffer whose final [`SLACK`] bytes are padding.
     ///
     /// Any read of width up to `SLACK` starting at a position `≤`
     /// [`payload_len`](Self::payload_len) stays in bounds, so per-field
     /// validation and fixed-width loads need no `unsafe` at the call site.
+    #[cfg_attr(feature = "verus", verus_verify)]
     #[repr(transparent)]
-    #[derive(Clone, Copy, Debug)]
-    pub struct SlackBuf<'a>(&'a [u8]);
+    #[derive(Clone, Copy)]
+    #[cfg_attr(not(feature = "verus"), derive(Debug))]
+    pub struct SlackBuf<'a>(pub(super) &'a [u8]);
+
+    // -- Verus-verified surface ---------------------------------------------
+    //
+    // `verus_spec` on inherent-impl methods must be the bare attribute name
+    // (the outer `verus_verify` proc-macro matches it literally and does not
+    // unwrap `cfg_attr` or path-qualified forms), so the verus impl is a
+    // separate `cfg`-gated block. The non-verus impl below is the runtime
+    // build; bodies are kept in sync.
+    #[cfg(feature = "verus")]
+    verus_builtin_macros::verus! {
+        impl<'a> View for SlackBuf<'a> {
+            type V = Seq<u8>;
+            closed spec fn view(&self) -> Seq<u8> { self.0@ }
+        }
+    }
+
+    #[cfg(feature = "verus")]
+    #[verus_verify]
+    #[allow(missing_docs)] // the runtime impl below carries the docs
+    impl<'a> SlackBuf<'a> {
+        #[verus_spec(ret =>
+            requires buf@.len() >= SLACK,
+            ensures ret@ == buf@,
+        )]
+        pub unsafe fn new_unchecked(buf: &'a [u8]) -> Self {
+            Self(buf)
+        }
+
+        #[verus_spec(ret =>
+            requires buf@.len() >= SLACK,
+            ensures ret@ == buf@,
+        )]
+        pub fn new_embedded_slack(buf: &'a [u8]) -> Self {
+            Self(buf)
+        }
+
+        #[verus_spec(ret =>
+            ensures ret@ == self@,
+        )]
+        pub fn as_bytes(&self) -> &'a [u8] {
+            self.0
+        }
+
+        #[verus_spec(ret =>
+            requires self@.len() >= SLACK,
+            ensures ret == self@.len() - SLACK,
+        )]
+        pub fn payload_len(&self) -> usize {
+            self.0.len() - SLACK
+        }
+
+        #[verus_spec(ret =>
+            requires
+                range.start <= range.end,
+                range.end + SLACK <= self@.len(),
+            ensures
+                ret == is_valid_utf8(self@.subrange(range.start as int, range.end as int)),
+        )]
+        pub fn verify(&self, range: Range<usize>) -> bool {
+            unsafe { verify_with_slack(self.0, range) }
+        }
+    }
+
+    // -- runtime (non-verus) surface ---------------------------------------
 
     // `le_u32`'s SAFETY argument relies on this; pin it at compile time so a
     // future change to `SLACK` cannot silently make the load OOB.
+    #[cfg(not(feature = "verus"))]
     const _: () = assert!(SLACK >= 4);
 
+    #[cfg(not(feature = "verus"))]
     impl<'a> SlackBuf<'a> {
         /// Wraps `buf` without checking the length invariant.
         ///

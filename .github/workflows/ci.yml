@@ -148,5 +148,5 @@ jobs:
       - name: cargo verus verify
         run: |
           cargo verus verify --features verus 2>&1 | tee /tmp/verus.out
-          # Fail if the count is anything other than the expected 72/0.
-          grep -q "verification results:: 72 verified, 0 errors" /tmp/verus.out
+          # Fail if the count is anything other than the expected 78/0.
+          grep -q "verification results:: 78 verified, 0 errors" /tmp/verus.out
