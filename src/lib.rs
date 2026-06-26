@@ -594,7 +594,11 @@ impl Tail<SLACK> for SlackTail {
     ensures
         ret == is_valid_utf8(buf@.subrange(range.start as int, range.end as int)),
 ))]
-#[inline]
+// `inline(always)`: with two SlackTail call sites in a binary (e.g. a caller
+// using both `verify_with_slack` and `SlackBuf::verify`), plain `#[inline]`
+// lets LLVM out-line this — and the call boundary then dominates the work on
+// short inputs (~2 ns of prologue vs ~1.5 ns of actual validation at 8 B).
+#[inline(always)]
 fn verify_impl<const PAD: usize, T: Tail<PAD>>(buf: &[u8], range: Range<usize>) -> bool {
     let start = range.start;
     let end = range.end;
@@ -680,7 +684,6 @@ fn verify_impl<const PAD: usize, T: Tail<PAD>>(buf: &[u8], range: Range<usize>) 
 // though pointers are 32-bit.
 
 #[cfg(not(any(target_pointer_width = "64", target_arch = "wasm32")))]
-#[inline]
 fn verify_multibyte(buf: &[u8], start: usize, end: usize) -> bool {
     core::str::from_utf8(&buf[start..end]).is_ok()
 }
@@ -885,7 +888,10 @@ const fn step(state: u64, byte: u8) -> u64 {
         ret == is_valid_utf8(buf@.subrange(start as int, end as int)),
 ))]
 #[cfg(any(target_pointer_width = "64", target_arch = "wasm32"))]
-#[inline]
+// Not `#[inline]`: this is the cold path (reached only when the ASCII fast
+// path finds a high bit). With `verify_impl` `inline(always)`, leaving this
+// out-of-line keeps the per-call-site inlined body to ~40 instructions
+// instead of ~250.
 #[allow(clippy::cast_possible_truncation)] // `(w >> 8k) as u8` is byte extraction
 #[allow(clippy::too_many_lines)] // proof annotations
 fn verify_multibyte(buf: &[u8], start: usize, end: usize) -> bool {
