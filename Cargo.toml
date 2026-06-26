@@ -36,6 +36,8 @@ verus_builtin_macros = { version = "=0.0.0-2026-06-14-0213", optional = true }
 vstd                 = { version = "=0.0.0-2026-06-14-0213", optional = true, default-features = false }
 
 [features]
+# Enables `extern crate alloc`; currently only adds `SlackBuf::new_add_slack`.
+alloc = []
 # simdutf8/std is required for runtime CPU-feature dispatch on x86-64; without
 # it, simdutf8 only selects AVX2/SSE4.2 at compile time via target_feature and
 # otherwise re-exports core::str::from_utf8 as its fallback.

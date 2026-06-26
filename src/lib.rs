@@ -92,6 +92,9 @@
 #![cfg_attr(rr, rr::coq_prefix("smooth_utf8"))]
 #![cfg_attr(rr, rr::include("ptr"))]
 
+#[cfg(feature = "alloc")]
+extern crate alloc;
+
 use core::ops::Range;
 
 /// `debug_assert!` that compiles out under Verus (which does not model
@@ -284,6 +287,38 @@ mod slack_buf {
             } else {
                 None
             }
+        }
+
+        /// Wraps `buf`, treating its final [`SLACK`] bytes as padding.
+        ///
+        /// This is the alloc-free constructor for callers that have already
+        /// padded the buffer themselves. With the `alloc` feature,
+        #[cfg_attr(feature = "alloc", doc = " [`new_add_slack`](Self::new_add_slack)")]
+        #[cfg_attr(not(feature = "alloc"), doc = " `new_add_slack`")]
+        /// appends the padding for you.
+        ///
+        /// # Panics
+        /// If `buf.len() < SLACK`.
+        #[inline]
+        #[must_use]
+        #[track_caller]
+        pub const fn new_embedded_slack(buf: &'a [u8]) -> Self {
+            assert!(buf.len() >= SLACK, "buf must carry SLACK trailing bytes");
+            Self(buf)
+        }
+
+        /// Appends [`SLACK`] zero bytes to `v` and wraps the result.
+        ///
+        /// `v` is borrowed for `'a`: it cannot be grown or otherwise mutated
+        /// while the returned `SlackBuf` is alive, and on return its length is
+        /// `original_len + SLACK`. May reallocate; reserve `SLACK` extra
+        /// capacity before filling `v` if that matters.
+        #[cfg(feature = "alloc")]
+        #[inline]
+        #[must_use]
+        pub fn new_add_slack(v: &'a mut alloc::vec::Vec<u8>) -> Self {
+            v.extend_from_slice(&[0u8; SLACK]);
+            Self(v.as_slice())
         }
 
         /// The full backing slice, including the trailing slack bytes.

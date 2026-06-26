@@ -187,6 +187,42 @@ fn slackbuf_new_rejects_short() {
 }
 
 #[test]
+fn slackbuf_new_embedded_slack() {
+    let buf = [0u8; SLACK + 3];
+    let sb = SlackBuf::new_embedded_slack(&buf);
+    assert_eq!(sb.payload_len(), 3);
+}
+
+#[test]
+#[should_panic(expected = "buf must carry SLACK trailing bytes")]
+fn slackbuf_new_embedded_slack_panics_on_short() {
+    let _ = SlackBuf::new_embedded_slack(&[0u8; SLACK - 1]);
+}
+
+#[cfg(feature = "alloc")]
+#[test]
+fn slackbuf_new_add_slack() {
+    let mut v = std::vec![b'a', b'b', b'c'];
+    let sb = SlackBuf::new_add_slack(&mut v);
+    assert_eq!(sb.payload_len(), 3);
+    assert_eq!(sb.as_bytes().len(), 3 + SLACK);
+    assert_eq!(sb.to_str(0..3), Some("abc"));
+    // After `sb`'s last use the borrow on `v` ends and the padding is
+    // observable.
+    assert_eq!(v.len(), 3 + SLACK);
+    assert_eq!(&v[3..], &[0u8; SLACK]);
+}
+
+#[cfg(feature = "alloc")]
+#[test]
+fn slackbuf_new_add_slack_empty() {
+    let mut v: std::vec::Vec<u8> = std::vec::Vec::new();
+    let sb = SlackBuf::new_add_slack(&mut v);
+    assert_eq!(sb.payload_len(), 0);
+    assert!(sb.verify(0..0));
+}
+
+#[test]
 fn slackbuf_payload_len_and_as_bytes() {
     let buf = [0u8; SLACK + 5];
     let sb = SlackBuf::new(&buf).unwrap();
