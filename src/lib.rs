@@ -128,9 +128,13 @@ pub mod spec;
 /// Inputs of this length or longer are delegated to `simdutf8` when the
 /// `simdutf8` feature is enabled. Below it, the verified SWAR/slack path
 /// is faster (no runtime dispatch); at and above, simdutf8's Keiser–Lemire
-/// SIMD validator wins, decisively on mixed input.
-#[cfg(feature = "simdutf8")]
+/// SIMD validator wins, decisively on mixed input. On aarch64 simdutf8's
+/// NEON kernel overtakes from ~64 B (vs ~128 B for AVX2 on x86), so the
+/// threshold is lowered there.
+#[cfg(all(feature = "simdutf8", not(target_arch = "aarch64")))]
 const LONG_THRESHOLD: usize = 128;
+#[cfg(all(feature = "simdutf8", target_arch = "aarch64"))]
+const LONG_THRESHOLD: usize = 64;
 
 /// Mask with the high bit of every byte set.
 #[cfg_attr(feature = "verus", verus_verify)]
@@ -152,7 +156,8 @@ pub const SLACK: usize = 8;
 /// protocols. It contains no `unsafe` over-reads: every wide load is either
 /// fully in bounds or goes through a zero-padded stack buffer.
 ///
-/// With `feature = "simdutf8"`, inputs of 128 bytes or more are delegated to
+/// With `feature = "simdutf8"`, inputs at or above a per-arch threshold
+/// (128 bytes on x86-64, 64 on aarch64) are delegated to
 /// [`simdutf8::basic::from_utf8`](https://docs.rs/simdutf8).
 ///
 /// ```
@@ -221,7 +226,8 @@ pub fn to_str(b: &[u8]) -> Option<&str> {
 /// `range`, rather than a pre-sliced `&buf[range]`: the slack bytes past
 /// `range.end` must remain part of the slice so that reading them is sound.
 ///
-/// With `feature = "simdutf8"`, inputs of 128 bytes or more are delegated to
+/// With `feature = "simdutf8"`, inputs at or above a per-arch threshold
+/// (128 bytes on x86-64, 64 on aarch64) are delegated to
 /// [`simdutf8::basic::from_utf8`](https://docs.rs/simdutf8) (the slack region
 /// is not used on that path).
 ///
@@ -600,8 +606,8 @@ fn verify_impl<const PAD: usize, T: Tail<PAD>>(buf: &[u8], range: Range<usize>) 
     }
 
     // ---- ASCII fast path: full STEP-byte blocks ---------------------------
-    // Portable SWAR (16 B/iter) by default; AVX2 (32 B/iter) when built with
-    // `+avx2`. Returns at the first non-ASCII byte or with `< STEP` left.
+    // Portable SWAR (16 B/iter) by default; AVX2 or NEON (32 B/iter) when
+    // available. Returns at the first non-ASCII block or with `< STEP` left.
     p = ascii_skip::skip(buf, p, end);
     if end - p >= ascii_skip::STEP {
         #[cfg(feature = "verus")]

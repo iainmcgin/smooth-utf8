@@ -1,12 +1,18 @@
-//! ASCII-prefix skip: returns the index of the first byte in `buf[p..end]`
-//! whose high bit is set, or some `q` with `end - q < STEP` if every full
-//! `STEP`-byte block is ASCII. The caller handles the `< STEP`-byte tail.
+//! ASCII-prefix skip: returns `q` with `start <= q <= end`, every byte in
+//! `buf[start..q]` is ASCII, and either `end - q < STEP` or the block
+//! `buf[q..q+STEP]` contains a non-ASCII byte. The caller handles the
+//! `< STEP`-byte tail.
 //!
-//! Two implementations: a portable 16-byte SWAR loop (the default and the
-//! Verus-verified path), and a 32-byte AVX2 prefix scan selected at compile
-//! time when building with `-C target-feature=+avx2` (or `target-cpu=native`
-//! on a host that has it). There is no runtime dispatch — the choice is
-//! static — so short strings pay no detection overhead.
+//! Three implementations, selected at compile time (no runtime dispatch, so
+//! short strings pay no detection overhead):
+//!
+//! - Portable 16-byte SWAR (the default and the Verus-verified path).
+//! - 32-byte AVX2 `movemask` scan when built with `-C target-feature=+avx2`.
+//! - 32-byte NEON `umaxv` scan on `aarch64` (NEON is mandatory there, so this
+//!   is the default aarch64 build).
+//!
+//! The SIMD paths are `cfg(not(feature = "verus"))`; under verus the SWAR
+//! path is always selected.
 
 #[cfg(feature = "verus")]
 use crate::spec::*;
@@ -57,10 +63,55 @@ mod imp {
     }
 }
 
-#[cfg(not(all(
-    target_arch = "x86_64",
-    target_feature = "avx2",
+#[cfg(all(
+    target_arch = "aarch64",
+    target_feature = "neon",
     not(feature = "verus")
+))]
+mod imp {
+    use core::arch::aarch64::{vld1q_u8, vmaxvq_u8, vorrq_u8};
+
+    pub const STEP: usize = 32;
+
+    /// 32-byte/iteration NEON ASCII scan.
+    ///
+    /// Loads two 16-byte vectors, ORs them, and reduces with `umaxv`: a result
+    /// `< 0x80` means all 32 bytes are ASCII. On a non-ASCII block this returns
+    /// the *block start* (not the precise byte) — the caller's 8-byte loop
+    /// re-scans the block, same as the SWAR path's contract. Finding the exact
+    /// lane on NEON (no `pmovmskb`) costs more than the re-scan saves on the
+    /// short inputs this crate is tuned for.
+    ///
+    /// Outside the Verus proof; carries no spec.
+    #[inline]
+    pub fn skip(buf: &[u8], start: usize, end: usize) -> usize {
+        let mut p = start;
+        while end - p >= STEP {
+            // SAFETY: `p + 32 <= end <= buf.len()`; `vld1q_u8` is an unaligned
+            // 16-byte load. NEON is mandatory on aarch64, so the intrinsics are
+            // sound to call without a runtime feature check.
+            let a = unsafe { vld1q_u8(buf.as_ptr().add(p)) };
+            let b = unsafe { vld1q_u8(buf.as_ptr().add(p + 16)) };
+            if unsafe { vmaxvq_u8(vorrq_u8(a, b)) } >= 0x80 {
+                return p;
+            }
+            p += STEP;
+        }
+        p
+    }
+}
+
+#[cfg(not(any(
+    all(
+        target_arch = "x86_64",
+        target_feature = "avx2",
+        not(feature = "verus")
+    ),
+    all(
+        target_arch = "aarch64",
+        target_feature = "neon",
+        not(feature = "verus")
+    ),
 )))]
 mod imp {
     #[allow(unused_imports)]
