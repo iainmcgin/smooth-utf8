@@ -34,17 +34,23 @@ jobs:
       - name: Clippy (simdutf8)
         run: cargo clippy --all-targets --features simdutf8 -- -D warnings
 
+      - name: Clippy (alloc)
+        run: cargo clippy --all-targets --features alloc -- -D warnings
+
       - name: Tests (default)
         run: cargo test
 
       - name: Tests (simdutf8)
         run: cargo test --features simdutf8
 
+      - name: Tests (alloc)
+        run: cargo test --features alloc
+
       - name: Tests (avx2)
         run: RUSTFLAGS="-Ctarget-feature=+avx2" cargo test
 
       - name: Doc build
-        run: cargo doc --no-deps --features simdutf8
+        run: cargo doc --no-deps --features alloc,simdutf8
 
   # ── MSRV check ───────────────────────────────────────────────────────────
   # MSRV applies to the library; dev-deps (criterion, proptest) need newer
@@ -63,6 +69,8 @@ jobs:
         run: cargo check --lib
       - name: Check (MSRV 1.60, simdutf8)
         run: cargo check --lib --features simdutf8
+      - name: Check (MSRV 1.60, alloc)
+        run: cargo check --lib --features alloc
 
   # ── no_std and 32-bit compilation checks ─────────────────────────────────
   check-nostd:
@@ -78,6 +86,9 @@ jobs:
       - name: Check no_std (bare-metal ARM)
         run: cargo check --lib --target thumbv7em-none-eabihf
 
+      - name: Check no_std (bare-metal ARM, alloc)
+        run: cargo check --lib --target thumbv7em-none-eabihf --features alloc
+
       - name: Check 32-bit
         run: cargo check --lib --target i686-unknown-linux-gnu
 
@@ -91,7 +102,7 @@ jobs:
         with:
           components: miri
       - name: miri (strict provenance)
-        run: MIRIFLAGS="-Zmiri-strict-provenance" cargo miri test
+        run: MIRIFLAGS="-Zmiri-strict-provenance" cargo miri test --features alloc
 
   # ── Fuzz smoke ───────────────────────────────────────────────────────────
   # Short differential fuzz against core::str::from_utf8. Full fuzzing runs
