@@ -14,7 +14,7 @@ Portable, formally verified UTF-8 validation for Rust — `#![no_std]`, zero-dep
 
 ```toml
 [dependencies]
-smoothutf8 = "0.1"
+smoothutf8 = "0.2"
 ```
 
 ```rust
@@ -82,7 +82,7 @@ On 32-bit targets other than `wasm32` (Cortex-M, i686, riscv32, …) the multiby
 
 ## Verification
 
-The default build (no `simdutf8`, no `target-cpu` override, 64-bit target) is **mechanically verified for functional correctness**: under `--features verus`, both `verify` and `verify_with_slack` carry the postcondition `ret == is_valid_utf8(buf@)`, where [`spec::is_valid_utf8`](src/spec.rs) is a line-by-line transcription of Unicode §3.9 Table 3-7 — a reader can audit it against the standard in five minutes. The SWAR sign-bit ASCII test and the shift-DFA's `(ROW[byte] >> state) & 63` step are each connected to that table by a `by(bit_vector)` lemma, and a 256-cell compile-time check pins `ROW` to `spec_row`; nothing in `spec.rs` is `assume`d or `admit`ted. `cargo verus verify --features verus` reports `72 verified, 0 errors`.
+The default build (no `simdutf8`, no `target-cpu` override, 64-bit target) is **mechanically verified for functional correctness**: under `--features verus`, both `verify` and `verify_with_slack` carry the postcondition `ret == is_valid_utf8(buf@)`, where [`spec::is_valid_utf8`](src/spec.rs) is a line-by-line transcription of Unicode §3.9 Table 3-7 — a reader can audit it against the standard in five minutes. The SWAR sign-bit ASCII test and the shift-DFA's `(ROW[byte] >> state) & 63` step are each connected to that table by a `by(bit_vector)` lemma, and a 256-cell compile-time check pins `ROW` to `spec_row`; nothing in `spec.rs` is `assume`d or `admit`ted. `SlackBuf::verify` carries the same postcondition (its body delegates to `verify_with_slack`). `cargo verus verify --features verus` reports `78 verified, 0 errors`.
 
 Verus is *not* foundational — it trusts Z3 and its own SMT encoding. The trusted base of the functional-correctness proof is four `external_body` items: the `load64` and `load8` leaf loads (`ret == pack64(buf@, at)` etc.; the standard contract for an unaligned read), `SafeTail`'s stack-copy tail (`byte j == buf@[at+j]` for `j < end−at`; six lines of safe code), and the `row()` table lookup (whose contract `ret == spec_row(byte)` is checked at compile time against a literal transcription of `spec_row` for all 256 inputs — the residual trust is that the literal matches the `spec fn`). Differential testing against `core::str::from_utf8` (table-driven cases, proptest, libfuzzer) cross-checks exactly that trusted base.
 
