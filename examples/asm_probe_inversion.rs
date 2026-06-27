@@ -1,7 +1,13 @@
 //! Probes for the safe-vs-slack 8 B inversion. Build with:
 //!   cargo rustc --release --example asm_probe_inversion -- --emit asm \
 //!     -C opt-level=3 -C codegen-units=1 -C llvm-args=-x86-asm-syntax=intel
-#![allow(clippy::missing_safety_doc, clippy::pedantic, clippy::nursery)]
+#![allow(
+    clippy::missing_safety_doc,
+    clippy::pedantic,
+    clippy::nursery,
+    clippy::incompatible_msrv,
+    clippy::redundant_slicing
+)]
 
 use core::ops::Range;
 
