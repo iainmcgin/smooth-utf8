@@ -1,6 +1,6 @@
 # Changelog
 
-## Unreleased
+## 0.2.1
 
 - aarch64: 32 B/iter NEON `ascii_skip` (`ldp; orr; umaxv; tbnz`). On Graviton4, `verify_with_slack` ASCII at 32–512 B improves 28–39% over the SWAR path, and the simdutf8 crossover on ASCII moves from ~64 B to ~256 B. The `feature = "simdutf8"` delegation threshold is lowered to 64 B on aarch64 (simdutf8's NEON kernel still wins on multibyte from 64 B).
 - Partition inlining: `verify_impl` is now `#[inline(always)]` and `verify_multibyte` is no longer `#[inline]`. With two `SlackTail` call sites in a binary, plain `#[inline]` let LLVM out-line `verify_impl`, and the call boundary then dominated the work on short inputs (~2 ns of prologue/epilogue versus ~1.3 ns of actual validation at 8 B). On Sapphire Rapids, `verify_with_slack` ASCII at 1–32 B improves 38–64%.
