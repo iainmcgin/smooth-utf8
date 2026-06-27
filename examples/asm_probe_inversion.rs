@@ -25,4 +25,20 @@ pub unsafe fn probe_slack_as_slice(padded: &[u8]) -> bool {
     smoothutf8::verify_with_slack(padded, 0..padded.len() - smoothutf8::SLACK)
 }
 
+/// Mirror of the `smoothutf8_slack` bench-arm closure body.
+#[no_mangle]
+#[inline(never)]
+pub fn probe_bench_slack(p: &[u8], e: usize) -> bool {
+    core::hint::black_box(unsafe {
+        smoothutf8::verify_with_slack(core::hint::black_box(&p[..]), 0..e)
+    })
+}
+
+/// Mirror of the `smoothutf8_slackbuf` bench-arm closure body.
+#[no_mangle]
+#[inline(never)]
+pub fn probe_bench_slackbuf(sb: smoothutf8::SlackBuf<'_>, e: usize) -> bool {
+    core::hint::black_box(core::hint::black_box(sb).verify(0..e))
+}
+
 fn main() {}

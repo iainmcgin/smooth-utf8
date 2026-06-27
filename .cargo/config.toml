@@ -1,12 +1,21 @@
-# 64-byte block alignment for benchmarks: without this, the 7-instruction
-# ASCII fast-path loop is small enough that whichever monomorphization's
-# back-edge straddles a 32B DSB µop-cache line in a given binary runs ~35%
-# slower than the other — a code-layout lottery, not an algorithmic
-# difference. This is the same setting buffa's historical bench runs use
-# (see buffa/benchmarks/history/annotations.md), where it collapsed a 19%
-# cross-release spread to 2.5%.
+# DSB µop-cache layout control for benchmarks. The 7-instruction ASCII
+# fast-path loop (28 bytes) is small enough that whichever inlined copy's
+# header straddles a 32B DSB window runs ~35% slower than one that fits —
+# a code-layout lottery, not an algorithmic difference.
+#
+# Two flags are needed:
+# - `-align-all-nofallthru-blocks=6` (64B) covers blocks reached only by
+#   jump. This is buffa's historical setting (see
+#   buffa/benchmarks/history/annotations.md).
+# - `-align-loops=32` covers loop *headers reached by fallthrough* — the
+#   SWAR `skip` loop is entered by falling through from the preceding
+#   `xor`, so the nofallthru flag does not align it. Without this, which
+#   bench-arm copies of the loop land on a 32B boundary is luck (issue
+#   surfaced 2026-06-26: slack's copy aligned, slackbuf's straddled,
+#   showing a +2-3 ns delta that grew with input size).
 #
 # Applied via build.rustflags so it covers `cargo bench` and
-# `cargo build --release --example microbench` alike.
+# `cargo build --release --example microbench` alike. These are bench
+# flags only; downstream consumers don't get `.cargo/config.toml`.
 [build]
-rustflags = ["-Cllvm-args=-align-all-nofallthru-blocks=6"]
+rustflags = ["-Cllvm-args=-align-all-nofallthru-blocks=6 -align-loops=32"]

@@ -31,9 +31,9 @@ On short ASCII inputs (≤32 bytes — the protobuf-field-value regime) `verify_
 | **4 B** Graviton4 | 1.01 | 1.55 | 3.76 | 3.76 |
 | **8 B** Sapphire Rapids | 1.38 | 2.04 | 8.18 | 7.95 |
 | **8 B** Graviton4 | 1.19 | 1.73 | 5.28 | 6.00 |
-| **32 B** Sapphire Rapids | 2.68 | 4.61 | 6.72 | 6.24 |
+| **32 B** Sapphire Rapids | 2.64 | 3.03 | 6.72 | 6.24 |
 | **32 B** Graviton4 | 1.55 | 1.96 | 3.39 | 3.39 |
-| **128 B** Sapphire Rapids | 6.41 | 9.37 | 10.52 | 4.54 |
+| **128 B** Sapphire Rapids | 6.39 | 6.81 | 10.52 | 4.54 |
 | **128 B** Graviton4 | 3.01 | 3.40 | 6.02 | 3.45 |
 
 <sub>Default build (no `target-cpu` override, no `simdutf8` feature on the smoothutf8 columns), 250-sample criterion medians, dedicated bare-metal. See [`doc/BENCHMARKS.md`](doc/BENCHMARKS.md) for methodology, the Graviton4 multibyte path, the full-size sweep plots, and the per-shape table.</sub>

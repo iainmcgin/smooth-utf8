@@ -4,7 +4,7 @@ Per-architecture throughput tables and methodology. The README carries a short s
 
 ## Methodology
 
-All numbers are 250-sample criterion medians on dedicated bare-metal AWS instances (one whole physical box; no noisy-neighbour variance), turbo disabled, governor pinned to `performance`, the SMT sibling of the pinned core offlined, background services stopped. Builds use `lto = true`, `codegen-units = 1`, and `-Cllvm-args=-align-all-nofallthru-blocks=6` (64-byte block alignment to neutralise the DSB µop-cache layout lottery — without it, two byte-identical hot loops can differ by ~35% depending on which one's back-edge straddles a 32 B DSB line).
+All numbers are 250-sample criterion medians on dedicated bare-metal AWS instances (one whole physical box; no noisy-neighbour variance), turbo disabled, governor pinned to `performance`, the SMT sibling of the pinned core offlined, background services stopped. Builds use `lto = true`, `codegen-units = 1`, `-Cllvm-args=-align-all-nofallthru-blocks=6` (64-byte alignment for jump-only block targets) and `-align-loops=32` (32-byte alignment for fallthrough-entered loop headers). Both are needed to neutralise the DSB µop-cache layout lottery on Intel: the 28-byte SWAR ASCII loop is small enough that whichever inlined copy's header lands at a 32 B boundary fits in one DSB window and runs ~35% faster than a copy that straddles, and the SWAR loop is fallthrough-entered so the nofallthru flag alone does not align it.
 
 Even with all of that, run-to-run reproducibility is ~±5%; deltas inside that band are not meaningful. Reproduce with `cargo bench --bench throughput`.
 
@@ -25,13 +25,13 @@ ASCII input, ns/call:
 | 1 | 8.77 | 1.63 | 2.20 | 4.00 | 4.04 | 0.41 | 0.40 |
 | 2 | 9.70 | 1.61 | 2.19 | 4.55 | 4.54 | 0.35 | 0.36 |
 | 4 | 8.77 | 1.64 | 2.19 | 6.80 | 6.55 | 0.24 | 0.25 |
-| 8 | 2.16 | 1.38 | 2.04 | 8.18 | 7.95 | 0.17 | 0.17 |
-| 16 | 2.63 | 2.03 | 2.57 | 4.75 | 4.52 | 0.43 | 0.45 |
-| 32 | 4.60 | 2.68 | 4.61 | 6.72 | 6.24 | 0.40 | 0.43 |
-| 64 | 7.01 | 5.04 | 7.22 | 10.05 | 3.45 | 0.50 | 1.46 |
-| 128 | 9.36 | 6.41 | 9.37 | 10.52 | 4.54 | 0.61 | 1.41 |
+| 8 | 2.17 | 1.37 | 2.02 | 8.18 | 7.95 | 0.17 | 0.17 |
+| 16 | 2.63 | 2.03 | 2.60 | 4.75 | 4.52 | 0.43 | 0.45 |
+| 32 | 3.09 | 2.64 | 3.03 | 6.72 | 6.24 | 0.39 | 0.42 |
+| 64 | 5.51 | 5.04 | 5.51 | 10.05 | 3.45 | 0.50 | 1.46 |
+| 128 | 6.83 | 6.39 | 6.81 | 10.52 | 4.54 | 0.61 | 1.41 |
 
-The `SlackBuf` column at ≥32 B shows more overhead than the ~0.7 ns expected from the range assert alone; this is under investigation (the bench's per-iteration `black_box(sb)` may be defeating `payload_len` hoisting that a real caller would get).
+`SlackBuf` − `slack` is a flat ~0.4–0.7 ns at every size: the per-call range assert (`cmp/ja, add, cmp/ja`).
 
 ## Graviton4 (`c8g.metal-24xl`, Neoverse-V2, default aarch64 build)
 
