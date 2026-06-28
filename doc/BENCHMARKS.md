@@ -16,6 +16,21 @@ The columns:
 - `core::str` — `core::str::from_utf8(b).is_ok()`.
 - `simdutf8` — `simdutf8::basic::from_utf8(b).is_ok()`.
 
+## 0.2.2 tail rewrite: before/after A/B (Sapphire Rapids)
+
+Same-box criterion compare run (`metal-bench-results/run-20260628T200204Z-4`, spot `c7i.metal-24xl`, baseline = 0.2.2 pre-rewrite, default x86-64 build, no `simdutf8`): replacing the stack-copy tail with overlapping in-bounds loads. Medians, ns/call, ASCII input:
+
+| size | `verify` before | `verify` after | × | `slack` before | `slack` after | `SlackBuf` before | `SlackBuf` after |
+|--:|--:|--:|--:|--:|--:|--:|--:|
+| 1 | 8.80 | 1.76 | 5.0 | 1.65 | 1.06 | 2.20 | 1.21 |
+| 2 | 9.63 | 1.83 | 5.3 | 1.68 | 1.05 | 2.20 | 1.21 |
+| 4 | 8.78 | 1.49 | 5.9 | 1.69 | 1.06 | 2.20 | 1.22 |
+| 8 | 2.17 | 2.23 | — | 1.41 | 1.06 | 2.05 | 1.32 |
+
+Multibyte input at 2–4 B improves 2.4–2.6× on the safe path (12.7 → 4.8 ns at 2 B) because the short ladder reaches the DFA without the copy. Sizes 16–256 are unchanged within the ±5% floor on every smoothutf8 series, and the `core::str` control reads no-change across the board (one +8.8% blip at ascii/16 — treat sub-±9% deltas in this run accordingly). The slack-path gains are a side effect of the rewrite (no trait dispatch, empty-check moved off the hot path), not the window itself. The safe `verify` now beats `core::str::from_utf8` at every measured size, including 1–7 B where it previously lost by ~2×.
+
+The tables below predate the 0.2.2 tail rewrite for the `verify` series; their short-size `verify` rows are superseded by the "after" column above.
+
 ## Sapphire Rapids (`c7i.metal-24xl`, default x86-64 build)
 
 ASCII input, ns/call:
@@ -54,7 +69,7 @@ The aarch64 build uses a 32 B/iter NEON `umaxv` ASCII scan (LLVM lowers it to `l
 
 The shape follows from where the work is and what bounds it at each input size:
 
-- **1–32 B (the short-string regime).** Per-call fixed cost dominates per-byte work. `verify_with_slack` covers a sub-8-byte range with one masked load and has no runtime CPU dispatch. `SlackBuf::verify` adds ~0.7 ns of range-assert overhead. `verify` (safe) covers 2–7 B with an overlapping load pair and 8+ B tails with the last-8-byte window — the stack-copy tail it paid here before 0.2.2 (a libc `memcpy` call at 1–7 B) is gone, so the safe path now tracks the slack path closely on short input. (The numbers in the tables above predate 0.2.2 for the `verify` series and will be refreshed.)
+- **1–32 B (the short-string regime).** Per-call fixed cost dominates per-byte work. `verify_with_slack` covers a sub-8-byte range with one masked load and has no runtime CPU dispatch. `SlackBuf::verify` adds ~0.7 ns of range-assert overhead. `verify` (safe) covers 2–7 B with an overlapping load pair and 8+ B tails with the last-8-byte window — the stack-copy tail it paid here before 0.2.2 (a libc `memcpy` call at 1–7 B) is gone, so the safe path now tracks the slack path closely on short input (see the A/B table above).
 - **32 B – ~32 KiB (L1-resident, compute-bound).** Throughput is set by instructions per byte. The default build's verified scalar loop plateaus alongside stdlib (which auto-vectorizes its ASCII fast path to the same width); a `+simdutf8` build hands off to simdutf8's Keiser–Lemire kernel and matches it.
 - **~32 KiB – L3 (cache step-downs).** All implementations slow together; relative ordering is unchanged.
 - **Beyond L3 (DRAM-bound).** Throughput is set by memory bandwidth, not the validator. Curves converge towards a common floor.
