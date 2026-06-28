@@ -712,9 +712,11 @@ unsafe fn verify_impl<const PAD: usize>(buf: &[u8], range: Range<usize>) -> bool
         return verify_multibyte(buf, p, end);
     }
 
-    // ---- ASCII fast path: residual 16-byte pairs --------------------------
-    // Statically dead when `STEP == 16` (the skip already left `< 16`); runs
-    // at most once when `STEP == 32`.
+    // ---- ASCII fast path: remaining full 8-byte words ---------------------
+    // At most one iteration when `STEP == 16`; up to three when `STEP == 32`.
+    // (A 16-byte-pair variant of this loop was tried and regressed Neoverse-V2
+    // by 10-40% at 8-128 B — the extra tail branches cost more than the saved
+    // test on a path the 8-byte loop already runs at one cycle per word.)
     #[cfg_attr(feature = "verus", verus_spec(
         invariant
             start == range.start, end == range.end,
@@ -722,56 +724,25 @@ unsafe fn verify_impl<const PAD: usize>(buf: &[u8], range: Range<usize>) -> bool
             all_ascii(buf@, start as int, p as int),
         decreases end - p
     ))]
-    while end - p >= 16 {
-        // SAFETY: `p + 16 <= end <= buf.len()` (the latter from
+    while end - p >= 8 {
+        // SAFETY: `p + 8 <= end <= buf.len()` (the latter from
         // `end + PAD <= buf.len()`, `PAD >= 0`).
-        let a = unsafe { load64(buf, p) };
-        // SAFETY: as above.
-        let b = unsafe { load64(buf, p + 8) };
-        if (a | b) & SIGN_BITS != 0 {
+        let bytes = unsafe { load64(buf, p) };
+        if bytes & SIGN_BITS != 0 {
             #[cfg(feature = "verus")]
             proof! { lemma_ascii_prefix_iff(buf@, start as int, p as int, end as int); }
             return verify_multibyte(buf, p, end);
         }
         #[cfg(feature = "verus")]
         proof! {
-            lemma_signbits16(buf@, p as int);
-            lemma_ascii_extend(buf@, start as int, p as int, p as int + 16);
+            lemma_signbits8(buf@, p as int);
+            lemma_ascii_extend(buf@, start as int, p as int, p as int + 8);
         }
-        p += 16;
+        p += 8;
     }
 
-    // ---- ASCII fast path: 1..=15 trailing bytes ---------------------------
-    // `9..=15` left: OR the words at `[p, p+8)` and `[end-8, end)`, which
-    // together cover `[p, end)`. `1..=8` left: the single window
-    // `[end-8, end)` covers `[p, end)`. Either way the window's leading
-    // bytes overlap `[start, p)`, which the loops above proved ASCII — their
-    // sign bits are zero, so the unmasked test equals the test over the
-    // unchecked tail `[p, end)`.
-    if end - p > 8 {
-        // SAFETY: `p + 8 < end <= buf.len()` for the first load; the second
-        // is in bounds because `end >= start + 8 >= 8` and `end <= buf.len()`.
-        let a = unsafe { load64(buf, p) };
-        // SAFETY: as above.
-        let b = unsafe { load64(buf, end - 8) };
-        if (a | b) & SIGN_BITS != 0 {
-            #[cfg(feature = "verus")]
-            proof! { lemma_ascii_prefix_iff(buf@, start as int, p as int, end as int); }
-            return verify_multibyte(buf, p, end);
-        }
-        #[cfg(feature = "verus")]
-        proof! {
-            assert((a | b) & 0x8080_8080_8080_8080u64 == 0
-                ==> a & 0x8080_8080_8080_8080u64 == 0
-                    && b & 0x8080_8080_8080_8080u64 == 0) by (bit_vector);
-            lemma_signbits8(buf@, p as int);
-            lemma_signbits8(buf@, end as int - 8);
-            // `[p, end) ⊆ [p, p+8) ∪ [end-8, end)` since `end - p <= 16`.
-            assert(all_ascii(buf@, p as int, end as int));
-            lemma_ascii_extend(buf@, start as int, p as int, end as int);
-            lemma_ascii_valid(buf@, start as int, end as int);
-        }
-    } else if p < end {
+    // ---- ASCII fast path: 1..=7 trailing bytes via the last-8-byte window -
+    if p < end {
         // SAFETY: `end >= start + 8 >= 8` and `end <= buf.len()` (from
         // `end + PAD <= buf.len()`, `PAD >= 0`).
         let bytes = unsafe { load64(buf, end - 8) };
