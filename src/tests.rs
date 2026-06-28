@@ -19,8 +19,10 @@ fn with_slack(b: &[u8]) -> (Vec<u8>, Range<usize>) {
 }
 
 fn check(b: &[u8]) {
-    let want = std_ok(b);
+    let want_str = core::str::from_utf8(b).ok();
+    let want = want_str.is_some();
     assert_eq!(verify(b), want, "verify mismatch on {b:x?}");
+    assert_eq!(from_utf8(b), want_str, "from_utf8 mismatch on {b:x?}");
 
     let (buf, range) = with_slack(b);
     // SAFETY: `with_slack` guarantees `range.end + SLACK == buf.len()`.
@@ -35,18 +37,21 @@ fn check(b: &[u8]) {
     );
     assert_eq!(
         sb.to_str(range),
-        if want {
-            core::str::from_utf8(b).ok()
-        } else {
-            None
-        },
-        "SlackBuf::to_str mismatch on {b:x?}",
+        want_str,
+        "SlackBuf::to_str mismatch on {b:x?}"
     );
 }
 
 #[test]
 fn empty() {
     check(b"");
+}
+
+#[test]
+#[allow(deprecated)]
+fn to_str_alias() {
+    assert_eq!(to_str(b"abc"), Some("abc"));
+    assert_eq!(to_str(&[0xFF]), None);
 }
 
 #[test]

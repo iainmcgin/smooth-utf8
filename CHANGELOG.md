@@ -1,5 +1,10 @@
 # Changelog
 
+## 0.2.2
+
+- Rename the free function `to_str` to `from_utf8`, matching `core::str::from_utf8` and the wider ecosystem (`simdutf8`, `bstr`). `to_str` remains as a deprecated, doc-hidden alias and will be removed in 0.3.0. `SlackBuf::to_str` is unchanged — `to_str` is the conventional name for a borrowing conversion *method* (cf. `CStr::to_str`).
+- `SlackBuf`'s inner slice field is now private to its module (was `pub(super)`), so the `len >= SLACK` invariant can only be established through the constructors, even from elsewhere in the crate.
+
 ## 0.2.1
 
 - aarch64: 32 B/iter NEON `ascii_skip` (`ldp; orr; umaxv; tbnz`). On Graviton4, `verify_with_slack` ASCII at 32–512 B improves 28–39% over the SWAR path, and the simdutf8 crossover on ASCII moves from ~64 B to ~256 B. The `feature = "simdutf8"` delegation threshold is lowered to 64 B on aarch64 (simdutf8's NEON kernel still wins on multibyte from 64 B).

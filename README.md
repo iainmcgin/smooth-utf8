@@ -40,7 +40,7 @@ On short ASCII inputs (≤32 bytes — the protobuf-field-value regime) `verify_
 
 ## Choosing an entry point
 
-**`verify(b: &[u8]) -> bool`** — the safe default. Functionally equivalent to `core::str::from_utf8(b).is_ok()`. Use this unless you can guarantee readable bytes after your input. **`to_str(b) -> Option<&str>`** is the same check returning the string view on success.
+**`verify(b: &[u8]) -> bool`** — the safe default. Functionally equivalent to `core::str::from_utf8(b).is_ok()`. Use this unless you can guarantee readable bytes after your input. **`from_utf8(b) -> Option<&str>`** is the same check returning the string view on success.
 
 **`SlackBuf<'a>`** — for zero-copy parsers that maintain at least `SLACK` (8) readable bytes after every logical field. The classic example is a protobuf decoder validating string fields inside a larger wire buffer: there is always more data after each field's end (the next field's tag, or the decoder's sentinel padding), so the invariant is free to satisfy. Construct the `SlackBuf` once per buffer; per-field `verify` / `to_str` / `le_u32` calls are then safe and skip the per-string tail copy, which is the dominant cost on inputs of a few bytes.
 
@@ -90,7 +90,7 @@ What is **not** covered by either proof, and is therefore trusted code reviewed 
 - the `simdutf8`-feature delegation path and the `cfg(avx2)` prefix scan (out of scope by design — third-party / intrinsic code);
 - the `core::str::from_utf8` delegation on 32-bit targets (the standard-library implementation itself);
 - the bridge step "`&[u8]::as_ptr()` yields a pointer valid for `len()` initialized bytes" (the standard-library slice contract; neither tool models slices and raw pointers in the same proof);
-- `to_str`'s call to `from_utf8_unchecked`: justified by the functional-correctness proof of `verify`, on the assumption that `spec::is_valid_utf8` coincides with Rust's `str` invariant — both are Unicode §3.9, but neither tool checks that equivalence.
+- `from_utf8`'s call to `from_utf8_unchecked`: justified by the functional-correctness proof of `verify`, on the assumption that `spec::is_valid_utf8` coincides with Rust's `str` invariant — both are Unicode §3.9, but neither tool checks that equivalence.
 
 The crate is also miri-clean under strict provenance and has 100% line coverage.
 

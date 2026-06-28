@@ -70,7 +70,7 @@
 //! bytes — is the standard-library contract for slices. The
 //! `simdutf8`-feature delegation path, the `cfg(avx2)` prefix scan, and the
 //! `core::str::from_utf8` delegation on 32-bit targets are *not* covered by
-//! these proofs. [`to_str`]'s call to `from_utf8_unchecked` is justified by
+//! these proofs. [`from_utf8`]'s call to `from_utf8_unchecked` is justified by
 //! the functional-correctness proof of [`verify`], on the assumption that
 //! `spec::is_valid_utf8` coincides with Rust's `str` invariant — both are
 //! Unicode §3.9, but neither tool checks that equivalence.
@@ -182,21 +182,31 @@ pub fn verify(b: &[u8]) -> bool {
 /// Returns `Some(b as &str)` if `b` is well-formed UTF-8.
 ///
 /// Single-scan: validates with [`verify`] and converts via
-/// [`core::str::from_utf8_unchecked`] on success.
+/// [`core::str::from_utf8_unchecked`] on success. Drop-in replacement for
+/// `core::str::from_utf8(b).ok()`; callers needing the byte position of a
+/// validation error should use [`core::str::from_utf8`] directly.
 ///
 /// ```
-/// assert_eq!(smoothutf8::to_str(b"abc"), Some("abc"));
-/// assert_eq!(smoothutf8::to_str(&[0xFF]), None);
+/// assert_eq!(smoothutf8::from_utf8(b"abc"), Some("abc"));
+/// assert_eq!(smoothutf8::from_utf8(&[0xFF]), None);
 /// ```
 #[inline]
 #[must_use]
-pub fn to_str(b: &[u8]) -> Option<&str> {
+pub fn from_utf8(b: &[u8]) -> Option<&str> {
     if verify(b) {
         // SAFETY: `verify` returned true, so `b` is valid UTF-8.
         Some(unsafe { core::str::from_utf8_unchecked(b) })
     } else {
         None
     }
+}
+
+/// Renamed to [`from_utf8`].
+#[deprecated(since = "0.2.2", note = "renamed to `from_utf8`")]
+#[inline]
+#[must_use]
+pub fn to_str(b: &[u8]) -> Option<&str> {
+    from_utf8(b)
 }
 
 /// Returns `true` if `buf[range]` is well-formed UTF-8, using the slack-buffer
@@ -281,7 +291,9 @@ mod slack_buf {
     #[repr(transparent)]
     #[derive(Clone, Copy)]
     #[cfg_attr(not(feature = "verus"), derive(Debug))]
-    pub struct SlackBuf<'a>(pub(super) &'a [u8]);
+    // Field private to this module: every construction goes through a
+    // constructor that establishes the `len >= SLACK` invariant.
+    pub struct SlackBuf<'a>(&'a [u8]);
 
     // -- Verus-verified surface ---------------------------------------------
     //
