@@ -69,6 +69,28 @@ fn ascii_long() {
     check(&[0x7f; 33]);
 }
 
+/// A non-ASCII byte at every position of every length spanning the short
+/// ladder (< 8), the last-8-byte window (1..=7 trailing), and the word/skip
+/// loops — the edges of the overlapping-load tail handling.
+#[test]
+fn non_ascii_every_position() {
+    for len in 1..=40 {
+        for pos in 0..len {
+            // Lone continuation byte: invalid at any position.
+            let mut v = std::vec![b'a'; len];
+            v[pos] = 0xBF;
+            check(&v);
+            // 2-byte scalar (é), truncated when it straddles the end.
+            let mut v = std::vec![b'a'; len];
+            v[pos] = 0xC3;
+            if pos + 1 < len {
+                v[pos + 1] = 0xA9;
+            }
+            check(&v);
+        }
+    }
+}
+
 #[test]
 fn boundary_scalars() {
     for s in [

@@ -236,6 +236,63 @@ pub proof fn lemma_signbits8(s: Seq<u8>, i: int)
     };
 }
 
+/// Spec-level little-endian pack of 4 bytes from `s` at offset `i`.
+pub open spec fn pack32(s: Seq<u8>, i: int) -> u32 {
+      (s[i  ] as u32)
+    | (s[i+1] as u32) << 8
+    | (s[i+2] as u32) << 16
+    | (s[i+3] as u32) << 24
+}
+
+/// Spec-level little-endian pack of 2 bytes from `s` at offset `i`.
+pub open spec fn pack16(s: Seq<u8>, i: int) -> u16 {
+    (s[i] as u16) | (s[i+1] as u16) << 8
+}
+
+/// `a & 0x8080_8080 == 0` ⟺ all 4 bytes of `a` are ASCII.
+pub proof fn lemma_signbits4(s: Seq<u8>, i: int)
+    requires 0 <= i, i + 4 <= s.len(),
+    ensures ((pack32(s, i) & 0x8080_8080u32) == 0) <==> all_ascii(s, i, i + 4)
+{
+    let b0 = s[i] as u32; let b1 = s[i+1] as u32;
+    let b2 = s[i+2] as u32; let b3 = s[i+3] as u32;
+    let x = b0 | b1<<8 | b2<<16 | b3<<24;
+    assert(
+        b0<256 && b1<256 && b2<256 && b3<256 ==>
+        ((x & 0x8080_8080u32 == 0) <==> (b0<128 && b1<128 && b2<128 && b3<128))
+    ) by (bit_vector)
+        requires x == b0 | b1<<8 | b2<<16 | b3<<24;
+    assert(all_ascii(s, i, i+4) <==>
+        (s[i]<128 && s[i+1]<128 && s[i+2]<128 && s[i+3]<128)) by {
+        if s[i]<128 && s[i+1]<128 && s[i+2]<128 && s[i+3]<128 {
+            assert forall |k: int| i <= k < i+4 implies #[trigger] s[k] < 0x80 by {
+                if k == i {} else if k == i+1 {} else if k == i+2 {} else {}
+            };
+        }
+    };
+}
+
+/// `a & 0x8080 == 0` ⟺ both bytes of `a` are ASCII.
+pub proof fn lemma_signbits2(s: Seq<u8>, i: int)
+    requires 0 <= i, i + 2 <= s.len(),
+    ensures ((pack16(s, i) & 0x8080u16) == 0) <==> all_ascii(s, i, i + 2)
+{
+    let b0 = s[i] as u16; let b1 = s[i+1] as u16;
+    let x = b0 | b1<<8;
+    assert(
+        b0<256 && b1<256 ==>
+        ((x & 0x8080u16 == 0) <==> (b0<128 && b1<128))
+    ) by (bit_vector)
+        requires x == b0 | b1<<8;
+    assert(all_ascii(s, i, i+2) <==> (s[i]<128 && s[i+1]<128)) by {
+        if s[i]<128 && s[i+1]<128 {
+            assert forall |k: int| i <= k < i+2 implies #[trigger] s[k] < 0x80 by {
+                if k == i {} else {}
+            };
+        }
+    };
+}
+
 // ============================================================================
 // `trailing_zeros` on `bytes & SIGN_BITS-mask` ↔ first non-ASCII byte
 // ============================================================================

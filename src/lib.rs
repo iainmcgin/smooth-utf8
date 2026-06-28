@@ -5,8 +5,8 @@
 //!
 //! - [`verify`] takes a plain `&[u8]` and is fully safe. It uses an 8-byte
 //!   SWAR (SIMD-within-a-register) ASCII fast path, and handles the final
-//!   partial chunk with an in-bounds stack copy so that it never reads past
-//!   the slice.
+//!   partial chunk with overlapping in-bounds loads so that it never reads
+//!   past the slice.
 //!
 //! - [`SlackBuf`] is the safe wrapper for zero-copy parsers that maintain at
 //!   least [`SLACK`] readable bytes after every logical field (the "eps-copy"
@@ -57,7 +57,8 @@
 //! - **Verus** (SMT-backed; enable with `--features verus`) verifies the
 //!   slice-typed core end-to-end, including the multibyte state machine.
 //!   The leaf load helpers are `external_body` with the spec
-//!   `ret == pack64(buf@, at)` — the standard little-endian load contract.
+//!   `ret == pack64(buf@, at)` (and `pack32`/`pack16` for the sub-word
+//!   loads) — the standard little-endian load contract.
 //!
 //! - **[RefinedRust]** (Rocq-backed; build with `--cfg rr`) verifies exactly
 //!   those leaf bodies in `raw`: that `ptr.add(at).cast().read_unaligned()`
@@ -153,8 +154,8 @@ pub const SLACK: usize = 8;
 ///
 /// This is functionally equivalent to `core::str::from_utf8(b).is_ok()`, but
 /// is tuned for the short, mostly-ASCII strings typical of serialized
-/// protocols. It contains no `unsafe` over-reads: every wide load is either
-/// fully in bounds or goes through a zero-padded stack buffer.
+/// protocols. It never reads outside `b`: partial chunks are covered by
+/// overlapping in-bounds loads instead of over-reads or stack copies.
 ///
 /// With `feature = "simdutf8"`, inputs at or above a per-arch threshold
 /// (128 bytes on x86-64, 64 on aarch64) are delegated to
@@ -176,7 +177,9 @@ pub fn verify(b: &[u8]) -> bool {
     }
     #[cfg(feature = "verus")]
     proof! { assert(b@.subrange(0, b@.len() as int) =~= b@); }
-    verify_impl::<0, SafeTail>(b, 0..b.len())
+    // SAFETY: the range is `0..b.len()`, so `start <= end` and
+    // `end + 0 <= b.len()` hold trivially.
+    unsafe { verify_impl::<0>(b, 0..b.len()) }
 }
 
 /// Returns `Some(b as &str)` if `b` is well-formed UTF-8.
@@ -267,7 +270,9 @@ pub unsafe fn verify_with_slack(buf: &[u8], range: Range<usize>) -> bool {
     if range.end - range.start >= LONG_THRESHOLD {
         return simdutf8::basic::from_utf8(&buf[range]).is_ok();
     }
-    verify_impl::<SLACK, SlackTail>(buf, range)
+    // SAFETY: `range.start <= range.end` and `range.end + SLACK <= buf.len()`
+    // are this function's own documented contract.
+    unsafe { verify_impl::<SLACK>(buf, range) }
 }
 
 // -- SlackBuf: safe wrapper over the slack-buffer invariant ------------------
@@ -510,6 +515,38 @@ unsafe fn load64(buf: &[u8], at: usize) -> u64 {
     unsafe { raw::load64_raw(buf.as_ptr(), at) }
 }
 
+/// Load 4 bytes at `buf[at..at+4]` as a little-endian `u32`.
+///
+/// # Safety
+/// `at + 4 <= buf.len()`.
+#[cfg_attr(feature = "verus", verus_verify(external_body))]
+#[cfg_attr(feature = "verus", verus_spec(ret =>
+    requires at + 4 <= buf@.len(),
+    ensures ret == pack32(buf@, at as int),
+))]
+#[inline(always)]
+unsafe fn load32(buf: &[u8], at: usize) -> u32 {
+    da!(at + 4 <= buf.len());
+    // SAFETY: `at + 4 <= buf.len()`; see `load64`.
+    unsafe { raw::load32_raw(buf.as_ptr(), at) }
+}
+
+/// Load 2 bytes at `buf[at..at+2]` as a little-endian `u16`.
+///
+/// # Safety
+/// `at + 2 <= buf.len()`.
+#[cfg_attr(feature = "verus", verus_verify(external_body))]
+#[cfg_attr(feature = "verus", verus_spec(ret =>
+    requires at + 2 <= buf@.len(),
+    ensures ret == pack16(buf@, at as int),
+))]
+#[inline(always)]
+unsafe fn load16(buf: &[u8], at: usize) -> u16 {
+    da!(at + 2 <= buf.len());
+    // SAFETY: `at + 2 <= buf.len()`; see `load64`.
+    unsafe { raw::load16_raw(buf.as_ptr(), at) }
+}
+
 /// Load 1 byte at `buf[at]`.
 ///
 /// # Safety
@@ -520,7 +557,6 @@ unsafe fn load64(buf: &[u8], at: usize) -> u64 {
     ensures ret == buf@[at as int],
 ))]
 #[inline(always)]
-#[cfg(any(target_pointer_width = "64", target_arch = "wasm32"))]
 unsafe fn load8(buf: &[u8], at: usize) -> u8 {
     da!(at < buf.len());
     // SAFETY: `at < buf.len()`; see `load64`.
@@ -529,76 +565,120 @@ unsafe fn load8(buf: &[u8], at: usize) -> u8 {
 
 // -- implementation ----------------------------------------------------------
 
-/// Tail-load strategy: how to obtain a `u64` when fewer than 8 bytes remain
-/// before the logical end.
+/// Ranges shorter than 8 bytes: no `ascii_skip`, no word loop.
 ///
-/// The const parameter `PAD` is the number of bytes that must be readable
-/// past `end`: `0` for [`SafeTail`], [`SLACK`] for [`SlackTail`]. It is a
-/// trait parameter (not an associated const) so the trait-level safety
-/// contract `at < end ∧ end + PAD ≤ buf.len()` can be expressed in Verus's
-/// attribute mode, which does not yet support associated consts in
-/// trait-impl proxies.
-#[cfg_attr(feature = "verus", verus_verify)]
-trait Tail<const PAD: usize> {
-    /// Load 8 bytes' worth at `buf[at..]`, where `at < end` and possibly
-    /// `at + 8 > end`. Bytes at positions `>= end` may be garbage; the caller
-    /// masks them.
-    #[cfg_attr(feature = "verus", verus_spec(ret =>
-        requires at < end, end + PAD <= buf@.len(),
-        ensures forall |j: int| 0 <= j < 8 && at + j < end
-            ==> #[trigger] byte64(ret, j) == buf@[at + j],
-    ))]
-    fn load64(buf: &[u8], at: usize, end: usize) -> u64;
-}
-
-/// Safe tail: copies the remaining `end - at` bytes into a zero-padded stack
-/// buffer and loads from that. Never reads past `end`.
-#[cfg_attr(feature = "verus", verus_verify)]
-struct SafeTail;
-
-#[cfg_attr(feature = "verus", verus_verify)]
-impl Tail<0> for SafeTail {
-    #[cfg_attr(feature = "verus", verus_verify(external_body))]
-    #[inline(always)]
-    fn load64(buf: &[u8], at: usize, end: usize) -> u64 {
-        da!(at < end && end <= buf.len());
-        if at + 8 <= end {
-            // SAFETY: `at + 8 <= end <= buf.len()`.
-            unsafe { load64(buf, at) }
-        } else {
-            let mut tmp = [0u8; 8];
-            tmp[..end - at].copy_from_slice(&buf[at..end]);
-            u64::from_le_bytes(tmp)
+/// With slack (`PAD >= 8`) the whole range is covered by one unconditional
+/// 8-byte load whose bytes past `end` are masked off. Without slack, a pair
+/// of overlapping in-bounds sub-word loads covers the range; OR-ing them is
+/// sound for the sign-bit test because duplicated bytes contribute the same
+/// sign bits twice. Neither shape stores to the stack — the variable-length
+/// zero-padded copy this replaces compiled to a libc `memcpy` call plus a
+/// store-to-load-forwarding stall, which dominated short-input latency.
+///
+/// # Safety
+/// `start <= end`, `end - start < 8`, and `end + PAD <= buf.len()`.
+/// (Machine-checked as `requires` under `--features verus`.)
+#[cfg_attr(feature = "verus", verus_spec(ret =>
+    requires
+        start <= end,
+        end - start < 8,
+        end + PAD <= buf@.len(),
+    ensures
+        ret == is_valid_utf8(buf@.subrange(start as int, end as int)),
+))]
+#[inline(always)]
+unsafe fn verify_short<const PAD: usize>(buf: &[u8], start: usize, end: usize) -> bool {
+    da!(start <= end && end - start < 8 && end.saturating_add(PAD) <= buf.len());
+    if PAD >= 8 {
+        if start == end {
+            #[cfg(feature = "verus")]
+            proof! { assert(buf@.subrange(start as int, end as int).len() == 0); }
+            return true;
         }
-    }
-}
-
-/// Slack tail: reads 8 bytes unconditionally. Requires the [`SLACK`]
-/// precondition on `buf`, which the caller of [`verify_with_slack`] upholds.
-#[cfg_attr(feature = "verus", verus_verify)]
-struct SlackTail;
-
-#[cfg_attr(feature = "verus", verus_verify)]
-impl Tail<SLACK> for SlackTail {
-    #[inline(always)]
-    fn load64(buf: &[u8], at: usize, end: usize) -> u64 {
-        da!(at < end);
-        let _ = end;
-        // SAFETY: `verify_with_slack`'s precondition gives
-        // `end + SLACK <= buf.len()` with `SLACK >= 8`, and every call site
-        // guarantees `at < end`, hence `at + 8 <= buf.len()`.
-        let ret = unsafe { load64(buf, at) };
+        // 1..=7, so the mask shift below is in `8..=56` — never 0 or 64.
+        let left = end - start;
+        // SAFETY: `start < end` and `end + PAD <= buf.len()` with `PAD >= 8`
+        // give `start + 8 < end + PAD <= buf.len()`; the bytes read past
+        // `end` land in the slack and are masked off below.
+        let bytes = unsafe { load64(buf, start) };
+        let mask = SIGN_BITS >> ((8 - left) * 8);
+        if bytes & mask != 0 {
+            return verify_multibyte(buf, start, end);
+        }
         #[cfg(feature = "verus")]
         proof! {
-            assert forall |j: int| 0 <= j < 8 && at + j < end
-                implies #[trigger] byte64(ret, j) == buf@[at + j] by {
-                lemma_pack64_byte(buf@, at as int, j);
+            assert forall |j: int| 0 <= j < left
+                implies #[trigger] byte64(bytes, j) == buf@[start + j] by {
+                lemma_pack64_byte(buf@, start as int, j);
             };
+            assert(mask == sign_mask(left as int));
+            lemma_mask_zero_ascii(buf@, start as int, left as int, bytes);
+            lemma_ascii_valid(buf@, start as int, end as int);
         }
-        ret
+        return true;
     }
+    if end - start >= 4 {
+        // SAFETY: `end + PAD <= buf.len()` gives `end <= buf.len()`, and
+        // `start + 4 <= end` in this branch, so both loads stay inside
+        // `[start, end)`; they overlap when `end - start < 8`, which the
+        // sign-bit OR absorbs.
+        let lo = unsafe { load32(buf, start) };
+        let hi = unsafe { load32(buf, end - 4) };
+        if (lo | hi) & 0x8080_8080 != 0 {
+            return verify_multibyte(buf, start, end);
+        }
+        #[cfg(feature = "verus")]
+        proof! {
+            assert((lo | hi) & 0x8080_8080u32 == 0
+                ==> lo & 0x8080_8080u32 == 0 && hi & 0x8080_8080u32 == 0) by (bit_vector);
+            lemma_signbits4(buf@, start as int);
+            lemma_signbits4(buf@, end as int - 4);
+            assert(all_ascii(buf@, start as int, end as int));
+            lemma_ascii_valid(buf@, start as int, end as int);
+        }
+        return true;
+    }
+    if end - start >= 2 {
+        // SAFETY: `end <= buf.len()` as above, and `start + 2 <= end` in
+        // this branch, so both loads stay inside `[start, end)`.
+        let lo = unsafe { load16(buf, start) };
+        let hi = unsafe { load16(buf, end - 2) };
+        if (lo | hi) & 0x8080 != 0 {
+            return verify_multibyte(buf, start, end);
+        }
+        #[cfg(feature = "verus")]
+        proof! {
+            assert((lo | hi) & 0x8080u16 == 0
+                ==> lo & 0x8080u16 == 0 && hi & 0x8080u16 == 0) by (bit_vector);
+            lemma_signbits2(buf@, start as int);
+            lemma_signbits2(buf@, end as int - 2);
+            assert(all_ascii(buf@, start as int, end as int));
+            lemma_ascii_valid(buf@, start as int, end as int);
+        }
+        return true;
+    }
+    if start < end {
+        // end - start == 1
+        // SAFETY: `start < end <= buf.len()`.
+        let b = unsafe { load8(buf, start) };
+        if b >= 0x80 {
+            return verify_multibyte(buf, start, end);
+        }
+        #[cfg(feature = "verus")]
+        proof! {
+            assert(all_ascii(buf@, start as int, end as int));
+            lemma_ascii_valid(buf@, start as int, end as int);
+        }
+        return true;
+    }
+    #[cfg(feature = "verus")]
+    proof! { assert(buf@.subrange(start as int, end as int).len() == 0); }
+    true
 }
 
+/// # Safety
+/// `range.start <= range.end` and `range.end + PAD <= buf.len()`.
+/// (Machine-checked as `requires` under `--features verus`.)
 #[cfg_attr(feature = "verus", verus_spec(ret =>
     requires
         range.start <= range.end,
@@ -606,20 +686,21 @@ impl Tail<SLACK> for SlackTail {
     ensures
         ret == is_valid_utf8(buf@.subrange(range.start as int, range.end as int)),
 ))]
-// `inline(always)`: with two SlackTail call sites in a binary (e.g. a caller
-// using both `verify_with_slack` and `SlackBuf::verify`), plain `#[inline]`
-// lets LLVM out-line this — and the call boundary then dominates the work on
-// short inputs (~2 ns of prologue vs ~1.5 ns of actual validation at 8 B).
+// `inline(always)`: with two call sites in a binary (e.g. a caller using both
+// `verify_with_slack` and `SlackBuf::verify`), plain `#[inline]` lets LLVM
+// out-line this — and the call boundary then dominates the work on short
+// inputs (~2 ns of prologue vs ~1.5 ns of actual validation at 8 B).
 #[inline(always)]
-fn verify_impl<const PAD: usize, T: Tail<PAD>>(buf: &[u8], range: Range<usize>) -> bool {
+unsafe fn verify_impl<const PAD: usize>(buf: &[u8], range: Range<usize>) -> bool {
     let start = range.start;
     let end = range.end;
-    let mut p = start;
-    if p == end {
-        #[cfg(feature = "verus")]
-        proof! { assert(buf@.subrange(start as int, end as int).len() == 0); }
-        return true;
+    da!(start <= end && end.saturating_add(PAD) <= buf.len());
+    if end - start < 8 {
+        // SAFETY: `end - start < 8` was just checked; `start <= end` and
+        // `end + PAD <= buf.len()` are this function's own contract.
+        return unsafe { verify_short::<PAD>(buf, start, end) };
     }
+    let mut p = start;
 
     // ---- ASCII fast path: full STEP-byte blocks ---------------------------
     // Portable SWAR (16 B/iter) by default; AVX2 or NEON (32 B/iter) when
@@ -631,8 +712,9 @@ fn verify_impl<const PAD: usize, T: Tail<PAD>>(buf: &[u8], range: Range<usize>) 
         return verify_multibyte(buf, p, end);
     }
 
-    // ---- ASCII fast path: remaining full 8-byte words ---------------------
-    // At most one iteration when `STEP == 16`; up to three when `STEP == 32`.
+    // ---- ASCII fast path: residual 16-byte pairs --------------------------
+    // Statically dead when `STEP == 16` (the skip already left `< 16`); runs
+    // at most once when `STEP == 32`.
     #[cfg_attr(feature = "verus", verus_spec(
         invariant
             start == range.start, end == range.end,
@@ -640,9 +722,59 @@ fn verify_impl<const PAD: usize, T: Tail<PAD>>(buf: &[u8], range: Range<usize>) 
             all_ascii(buf@, start as int, p as int),
         decreases end - p
     ))]
-    while end - p >= 8 {
-        // SAFETY: `p + 8 <= end <= buf.len()`.
-        let bytes = unsafe { load64(buf, p) };
+    while end - p >= 16 {
+        // SAFETY: `p + 16 <= end <= buf.len()` (the latter from
+        // `end + PAD <= buf.len()`, `PAD >= 0`).
+        let a = unsafe { load64(buf, p) };
+        // SAFETY: as above.
+        let b = unsafe { load64(buf, p + 8) };
+        if (a | b) & SIGN_BITS != 0 {
+            #[cfg(feature = "verus")]
+            proof! { lemma_ascii_prefix_iff(buf@, start as int, p as int, end as int); }
+            return verify_multibyte(buf, p, end);
+        }
+        #[cfg(feature = "verus")]
+        proof! {
+            lemma_signbits16(buf@, p as int);
+            lemma_ascii_extend(buf@, start as int, p as int, p as int + 16);
+        }
+        p += 16;
+    }
+
+    // ---- ASCII fast path: 1..=15 trailing bytes ---------------------------
+    // `9..=15` left: OR the words at `[p, p+8)` and `[end-8, end)`, which
+    // together cover `[p, end)`. `1..=8` left: the single window
+    // `[end-8, end)` covers `[p, end)`. Either way the window's leading
+    // bytes overlap `[start, p)`, which the loops above proved ASCII — their
+    // sign bits are zero, so the unmasked test equals the test over the
+    // unchecked tail `[p, end)`.
+    if end - p > 8 {
+        // SAFETY: `p + 8 < end <= buf.len()` for the first load; the second
+        // is in bounds because `end >= start + 8 >= 8` and `end <= buf.len()`.
+        let a = unsafe { load64(buf, p) };
+        // SAFETY: as above.
+        let b = unsafe { load64(buf, end - 8) };
+        if (a | b) & SIGN_BITS != 0 {
+            #[cfg(feature = "verus")]
+            proof! { lemma_ascii_prefix_iff(buf@, start as int, p as int, end as int); }
+            return verify_multibyte(buf, p, end);
+        }
+        #[cfg(feature = "verus")]
+        proof! {
+            assert((a | b) & 0x8080_8080_8080_8080u64 == 0
+                ==> a & 0x8080_8080_8080_8080u64 == 0
+                    && b & 0x8080_8080_8080_8080u64 == 0) by (bit_vector);
+            lemma_signbits8(buf@, p as int);
+            lemma_signbits8(buf@, end as int - 8);
+            // `[p, end) ⊆ [p, p+8) ∪ [end-8, end)` since `end - p <= 16`.
+            assert(all_ascii(buf@, p as int, end as int));
+            lemma_ascii_extend(buf@, start as int, p as int, end as int);
+            lemma_ascii_valid(buf@, start as int, end as int);
+        }
+    } else if p < end {
+        // SAFETY: `end >= start + 8 >= 8` and `end <= buf.len()` (from
+        // `end + PAD <= buf.len()`, `PAD >= 0`).
+        let bytes = unsafe { load64(buf, end - 8) };
         if bytes & SIGN_BITS != 0 {
             #[cfg(feature = "verus")]
             proof! { lemma_ascii_prefix_iff(buf@, start as int, p as int, end as int); }
@@ -650,27 +782,9 @@ fn verify_impl<const PAD: usize, T: Tail<PAD>>(buf: &[u8], range: Range<usize>) 
         }
         #[cfg(feature = "verus")]
         proof! {
-            lemma_signbits8(buf@, p as int);
-            lemma_ascii_extend(buf@, start as int, p as int, p as int + 8);
-        }
-        p += 8;
-    }
-
-    // ---- ASCII fast path: 0..=7 trailing bytes ----------------------------
-    if p < end {
-        let left = end - p; // 1..=7
-        let bytes = T::load64(buf, p, end);
-        // `left ∈ 1..=7`, so the shift amount is in `8..=56` — never 0 or 64.
-        let mask = SIGN_BITS >> ((8 - left) * 8);
-        if bytes & mask != 0 {
-            #[cfg(feature = "verus")]
-            proof! { lemma_ascii_prefix_iff(buf@, start as int, p as int, end as int); }
-            return verify_multibyte(buf, p, end);
-        }
-        #[cfg(feature = "verus")]
-        proof! {
-            assert(mask == sign_mask(left as int));
-            lemma_mask_zero_ascii(buf@, p as int, left as int, bytes);
+            lemma_signbits8(buf@, end as int - 8);
+            // `[p, end) ⊆ [end-8, end)` since `end - p <= 8`.
+            assert(all_ascii(buf@, p as int, end as int));
             lemma_ascii_extend(buf@, start as int, p as int, end as int);
             lemma_ascii_valid(buf@, start as int, end as int);
         }
@@ -921,7 +1035,7 @@ fn verify_multibyte(buf: &[u8], start: usize, end: usize) -> bool {
         decreases end - p
     ))]
     while end - p >= 8 {
-        // SAFETY: `p + 8 <= end` and `end + PAD <= buf.len()` with `PAD >= 0`.
+        // SAFETY: `p + 8 <= end <= buf.len()` (this function's contract).
         let w = unsafe { load64(buf, p) };
         // ASCII re-skip: if we are between codepoints and all eight bytes are
         // ASCII, the DFA would walk ACCEPT→ACCEPT eight times. One masked
@@ -984,7 +1098,7 @@ fn verify_multibyte(buf: &[u8], start: usize, end: usize) -> bool {
         decreases end - p
     ))]
     while p < end {
-        // SAFETY: `p < end <= end + PAD <= buf.len()`.
+        // SAFETY: `p < end <= buf.len()` (this function's contract).
         state = step(state, unsafe { load8(buf, p) });
         #[cfg(feature = "verus")]
         proof! { lemma_run_snoc(ST_ACCEPT, buf@, start as int, p as int); }

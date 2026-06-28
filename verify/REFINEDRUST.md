@@ -4,11 +4,11 @@ The CI gate for this crate is Verus (`cargo verus verify --features verus`, runs
 
 ## What it proves
 
-Verus treats `load64` and `load8` as `external_body` — it proves every call site satisfies `at + N ≤ buf.len()` but trusts the bodies. RefinedRust closes that gap: it verifies the bodies of `raw::load64_raw` and `raw::load8_raw` (the only place this crate dereferences a raw pointer) against separating ownership of the buffer. The annotated specs are in `src/raw.rs` and `src/raw/shims.rs`, gated by `cfg(rr)` so they are inert in normal builds.
+Verus treats the leaf loads (`load64`, `load32`, `load16`, `load8`) as `external_body` — it proves every call site satisfies `at + N ≤ buf.len()` but trusts the bodies. RefinedRust closes that gap: it verifies the bodies of `raw::load64_raw`, `raw::load32_raw`, `raw::load16_raw`, and `raw::load8_raw` (`src/raw.rs` is the only place this crate dereferences a raw pointer) against separating ownership of the buffer. The annotated specs are in `src/raw.rs` and `src/raw/shims.rs`, gated by `cfg(rr)` so they are inert in normal builds.
 
 The trusted base is: the `read_unaligned` shim contract in `src/raw/shims.rs` (sound by inspection — owning `n` initialized bytes and reading `size_of::<T>()` of them at offset `i` with `i + size ≤ n` does not change them), the `from_le` shim (existential return, vacuously sound), and the `&[u8]::as_ptr()` → "pointer valid for `len()` initialized bytes" step that bridges Verus's slice domain to RefinedRust's raw-pointer domain (the standard-library slice contract).
 
-## Reproducing `2 Qed, 0 failed`
+## Reproducing `4 Qed, 0 failed`
 
 Requires nix with flakes. The toolchain (Rocq 9.1, Iris, the RefinedRust theories, the rrstd shim libraries, and the `cargo-refinedrust` frontend) is built from a pinned commit of <https://gitlab.mpi-sws.org/lgaeher/refinedrust-dev>.
 
@@ -35,10 +35,10 @@ RUSTFLAGS="--cfg rr" RR_CONFIG=RefinedRust.toml \
 #    It hard-codes nix store paths from the build above; adjust if your
 #    store hashes differ.
 bash verify/rr-check.sh
-# → ... === proofs: 2 Qed, 0 failed ===
+# → ... === proofs: 4 Qed, 0 failed ===
 ```
 
-Both proofs close via the Lithium automation alone; no manual Rocq is needed.
+All four proofs close via the Lithium automation alone; no manual Rocq is needed. Note `lib_load_paths` in `RefinedRust.toml` is relative to the crate root's parent layout (`../external/refinedrust/stdlib`); adjust it (or symlink) if your checkout lives elsewhere.
 
 ## Known limitations
 

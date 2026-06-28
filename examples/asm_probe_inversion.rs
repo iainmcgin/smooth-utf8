@@ -1,4 +1,6 @@
-//! Probes for the safe-vs-slack 8 B inversion. Build with:
+//! Probes for the safe-vs-slack 8 B inversion. Historical: the inversion was
+//! caused by the stack-copy tail removed in 0.2.2; the probe is kept for
+//! comparing codegen across versions. Build with:
 //!   cargo rustc --release --example asm_probe_inversion -- --emit asm \
 //!     -C opt-level=3 -C codegen-units=1 -C llvm-args=-x86-asm-syntax=intel
 #![allow(

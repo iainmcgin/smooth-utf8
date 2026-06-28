@@ -10,8 +10,8 @@ Even with all of that, run-to-run reproducibility is ~±5%; deltas inside that b
 
 The columns:
 
-- `verify` — `smoothutf8::verify` (safe; per-string tail copy via stack buffer).
-- `slack` — `unsafe smoothutf8::verify_with_slack` (the eps-copy over-read path; no per-string tail copy).
+- `verify` — `smoothutf8::verify` (safe; overlapping in-bounds tail loads).
+- `slack` — `unsafe smoothutf8::verify_with_slack` (the eps-copy over-read path; one masked load for sub-8-byte ranges).
 - `SlackBuf` — `SlackBuf::verify` (safe; one combined range assert per call on top of `slack`).
 - `core::str` — `core::str::from_utf8(b).is_ok()`.
 - `simdutf8` — `simdutf8::basic::from_utf8(b).is_ok()`.
@@ -54,7 +54,7 @@ The aarch64 build uses a 32 B/iter NEON `umaxv` ASCII scan (LLVM lowers it to `l
 
 The shape follows from where the work is and what bounds it at each input size:
 
-- **1–32 B (the short-string regime).** Per-call fixed cost dominates per-byte work. `verify_with_slack` has no tail copy and no runtime CPU dispatch, so it leads. `SlackBuf::verify` adds ~0.7 ns of range-assert overhead. `verify` (safe) pays a stack-copy tail at 1–7 B that vanishes once the input fills a whole 8-byte word.
+- **1–32 B (the short-string regime).** Per-call fixed cost dominates per-byte work. `verify_with_slack` covers a sub-8-byte range with one masked load and has no runtime CPU dispatch. `SlackBuf::verify` adds ~0.7 ns of range-assert overhead. `verify` (safe) covers 2–7 B with an overlapping load pair and 8+ B tails with the last-8-byte window — the stack-copy tail it paid here before 0.2.2 (a libc `memcpy` call at 1–7 B) is gone, so the safe path now tracks the slack path closely on short input. (The numbers in the tables above predate 0.2.2 for the `verify` series and will be refreshed.)
 - **32 B – ~32 KiB (L1-resident, compute-bound).** Throughput is set by instructions per byte. The default build's verified scalar loop plateaus alongside stdlib (which auto-vectorizes its ASCII fast path to the same width); a `+simdutf8` build hands off to simdutf8's Keiser–Lemire kernel and matches it.
 - **~32 KiB – L3 (cache step-downs).** All implementations slow together; relative ordering is unchanged.
 - **Beyond L3 (DRAM-bound).** Throughput is set by memory bandwidth, not the validator. Curves converge towards a common floor.

@@ -42,3 +42,23 @@ pub unsafe fn read_unaligned_shim<T>(_src: *const T) -> T {
 pub fn u64_from_le_shim(_x: u64) -> u64 {
     unimplemented!()
 }
+
+#[rr::export_as(#method core::num::u32::from_le)]
+#[rr::only_spec]
+#[rr::params("x" : "Z")]
+#[rr::args("x")]
+#[rr::exists("v" : "Z")]
+#[rr::returns("v")]
+pub fn u32_from_le_shim(_x: u32) -> u32 {
+    unimplemented!()
+}
+
+#[rr::export_as(#method core::num::u16::from_le)]
+#[rr::only_spec]
+#[rr::params("x" : "Z")]
+#[rr::args("x")]
+#[rr::exists("v" : "Z")]
+#[rr::returns("v")]
+pub fn u16_from_le_shim(_x: u16) -> u16 {
+    unimplemented!()
+}

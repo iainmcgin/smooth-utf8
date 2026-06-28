@@ -46,6 +46,8 @@ compile() {
 compile "$OUT/generated/generated_code_smoothutf8.v"                  || exit 1
 compile "$OUT/generated/generated_specs_smoothutf8.v"                 || exit 1
 compile "$OUT/generated/generated_template_raw_load64_raw.v"         || exit 1
+compile "$OUT/generated/generated_template_raw_load32_raw.v"         || exit 1
+compile "$OUT/generated/generated_template_raw_load16_raw.v"         || exit 1
 compile "$OUT/generated/generated_template_raw_load8_raw.v"          || exit 1
 
 echo "=== templates compiled; running proofs ==="
