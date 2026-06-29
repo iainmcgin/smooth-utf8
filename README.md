@@ -23,18 +23,18 @@ assert!(verify("hello, 世界! 🌍".as_bytes()));
 assert!(!verify(&[0xC0, 0x80])); // overlong NUL
 ```
 
-On short ASCII inputs (≤32 bytes — the protobuf-field-value regime) `verify_with_slack` is 2–6× faster than both `core::str::from_utf8` and `simdutf8`, because it has no runtime CPU dispatch and no tail handling. `SlackBuf::verify` adds one combined range assert (~0.5–0.7 ns at ≤16 B) on top of that. On long inputs the default build matches `core::str::from_utf8`, and a `feature = "simdutf8"` build matches `simdutf8`.
+On short ASCII inputs (≤32 bytes — the protobuf-field-value regime) even the fully safe `verify` is 2–5× faster than `core::str::from_utf8` and `simdutf8`, and `verify_with_slack` / `SlackBuf::verify` shave the remaining tail-dispatch branches off that. Since 0.2.2 the safe path never copies to the stack — partial chunks are covered by overlapping in-bounds loads — so the unsafe slack path is an increment, not a multiple. On long inputs the default build matches `core::str::from_utf8`, and a `feature = "simdutf8"` build matches `simdutf8`.
 
-| ASCII, ns/call | `verify_with_slack` | `SlackBuf::verify` | `core::str` | `simdutf8` |
-|---|--:|--:|--:|--:|
-| **4 B** Sapphire Rapids | 1.64 | 2.19 | 6.80 | 6.55 |
-| **4 B** Graviton4 | 1.01 | 1.55 | 3.76 | 3.76 |
-| **8 B** Sapphire Rapids | 1.38 | 2.04 | 8.18 | 7.95 |
-| **8 B** Graviton4 | 1.19 | 1.73 | 5.28 | 6.00 |
-| **32 B** Sapphire Rapids | 2.64 | 3.03 | 6.72 | 6.24 |
-| **32 B** Graviton4 | 1.55 | 1.96 | 3.39 | 3.39 |
-| **128 B** Sapphire Rapids | 6.39 | 6.81 | 10.52 | 4.54 |
-| **128 B** Graviton4 | 3.01 | 3.40 | 6.02 | 3.45 |
+| ASCII, ns/call | `verify` (safe) | `verify_with_slack` | `SlackBuf::verify` | `core::str` | `simdutf8` |
+|---|--:|--:|--:|--:|--:|
+| **4 B** Sapphire Rapids | 1.49 | 1.40 | 1.33 | 7.05 | 7.16 |
+| **4 B** Graviton4 | 1.27 | 0.94 | 1.05 | 3.75 | 3.81 |
+| **8 B** Sapphire Rapids | 2.23 | 1.37 | 1.31 | 8.23 | 7.96 |
+| **8 B** Graviton4 | 1.71 | 1.13 | 1.14 | 5.29 | 5.49 |
+| **32 B** Sapphire Rapids | 2.99 | 2.42 | 2.76 | 6.91 | 6.39 |
+| **32 B** Graviton4 | 1.88 | 1.50 | 1.79 | 3.39 | 3.42 |
+| **128 B** Sapphire Rapids | 6.58 | 5.91 | 5.94 | 10.60 | 5.26 |
+| **128 B** Graviton4 | 3.70 | 3.06 | 3.40 | 6.00 | 4.04 |
 
 <sub>Default build (no `target-cpu` override, no `simdutf8` feature on the smoothutf8 columns), 250-sample criterion medians, dedicated bare-metal. See [`doc/BENCHMARKS.md`](doc/BENCHMARKS.md) for methodology, the Graviton4 multibyte path, the full-size sweep plots, and the per-shape table.</sub>
 
@@ -57,7 +57,7 @@ let field_end = pos + field_len;
 let s: &str = buf.to_str(pos..field_end).ok_or(DecodeError::InvalidUtf8)?;
 ```
 
-The slack path covers a 1–7 byte range with one masked load where `verify` issues an overlapping load pair. `SlackBuf::verify` adds a per-call range assert (~0.5–0.7 ns at ≤16 B); `unsafe verify_with_slack(buf, range)` is the underlying zero-overhead entry point and remains available for callers who hold the range invariant elsewhere.
+The slack path covers a 1–7 byte range with one masked load where `verify` issues an overlapping load pair. `SlackBuf::verify` adds a per-call range assert whose cost is at or below measurement noise (0–0.7 ns); `unsafe verify_with_slack(buf, range)` is the underlying zero-overhead entry point and remains available for callers who hold the range invariant elsewhere.
 
 ## Build configurations
 

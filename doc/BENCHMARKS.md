@@ -29,6 +29,8 @@ Same-box criterion compare run (`metal-bench-results/run-20260628T200204Z-4`, sp
 
 Multibyte input at 2–4 B improves 2.4–2.6× on the safe path (12.7 → 4.8 ns at 2 B) because the short ladder reaches the DFA without the copy. Sizes 16–256 are unchanged within the ±5% floor on every smoothutf8 series, and the `core::str` control reads no-change across the board (one +8.8% blip at ascii/16 — treat sub-±9% deltas in this run accordingly). The slack-path gains are a side effect of the rewrite (no trait dispatch, empty-check moved off the hot path), not the window itself. The safe `verify` now beats `core::str::from_utf8` at every measured size, including 1–7 B where it previously lost by ~2×.
 
+Two provenance caveats. First, this A/B's candidate carried a 16-byte-pair residual loop that was later replaced by the plain 8-byte word loop after it regressed Neoverse-V2 (see the Graviton4 section); at every size in this table the two shapes execute equivalent code on x86-64, so the comparison stands. Second, absolute sub-2 ns numbers do not transfer between boxes: the same binary that measures `slack` at 1.06 ns here reads 1.37 ns on the box behind the tables below — cross-box code-layout and frequency effects exceed the same-box ±5% floor at this scale. Trust the ratios within one run and one box; the tables below are one box's snapshot.
+
 The tables below predate the 0.2.2 tail rewrite for the `verify` series; their short-size `verify` rows are superseded by the "after" column above.
 
 ## Sapphire Rapids (`c7i.metal-24xl`, default x86-64 build)
@@ -37,16 +39,16 @@ ASCII input, ns/call:
 
 | size | `verify` | `slack` | `SlackBuf` | `core::str` | `simdutf8` | slack÷std | slack÷simd |
 |--:|--:|--:|--:|--:|--:|--:|--:|
-| 1 | 8.77 | 1.63 | 2.20 | 4.00 | 4.04 | 0.41 | 0.40 |
-| 2 | 9.70 | 1.61 | 2.19 | 4.55 | 4.54 | 0.35 | 0.36 |
-| 4 | 8.77 | 1.64 | 2.19 | 6.80 | 6.55 | 0.24 | 0.25 |
-| 8 | 2.17 | 1.37 | 2.02 | 8.18 | 7.95 | 0.17 | 0.17 |
-| 16 | 2.63 | 2.03 | 2.60 | 4.75 | 4.52 | 0.43 | 0.45 |
-| 32 | 3.09 | 2.64 | 3.03 | 6.72 | 6.24 | 0.39 | 0.42 |
-| 64 | 5.51 | 5.04 | 5.51 | 10.05 | 3.45 | 0.50 | 1.46 |
-| 128 | 6.83 | 6.39 | 6.81 | 10.52 | 4.54 | 0.61 | 1.41 |
+| 1 | 1.76 | 1.37 | 1.33 | 3.98 | 3.99 | 0.34 | 0.34 |
+| 2 | 1.84 | 1.37 | 1.34 | 4.59 | 4.55 | 0.30 | 0.30 |
+| 4 | 1.49 | 1.40 | 1.33 | 7.05 | 7.16 | 0.20 | 0.20 |
+| 8 | 2.23 | 1.37 | 1.31 | 8.23 | 7.96 | 0.17 | 0.17 |
+| 16 | 2.54 | 1.84 | 2.07 | 5.05 | 4.69 | 0.36 | 0.39 |
+| 32 | 2.99 | 2.42 | 2.76 | 6.91 | 6.39 | 0.35 | 0.38 |
+| 64 | 5.07 | 4.62 | 4.58 | 10.09 | 3.94 | 0.46 | 1.17 |
+| 128 | 6.58 | 5.91 | 5.94 | 10.60 | 5.26 | 0.56 | 1.12 |
 
-`SlackBuf` − `slack` is a flat ~0.4–0.7 ns at every size: the per-call range assert (`cmp/ja, add, cmp/ja`).
+<sub>0.2.2, `run-20260628T221756Z` (default build; `simdutf8` column from the same run's dev-dependency series). On this box the `SlackBuf` range assert costs nothing measurable against `slack` — at sub-2 ns scales, cross-run code-layout effects are of the same order as one assert.</sub>
 
 ## Graviton4 (`c8g.metal-24xl`, Neoverse-V2, default aarch64 build)
 
@@ -54,14 +56,16 @@ ASCII input, ns/call:
 
 | size | `verify` | `slack` | `SlackBuf` | `core::str` | `simdutf8` | slack÷std | slack÷simd |
 |--:|--:|--:|--:|--:|--:|--:|--:|
-| 1 | 7.33 | 1.01 | 1.56 | 2.25 | 2.67 | 0.45 | 0.38 |
-| 2 | 7.34 | 1.00 | 1.56 | 2.97 | 3.01 | 0.34 | 0.33 |
-| 4 | 3.77 | 1.01 | 1.55 | 3.76 | 3.76 | 0.27 | 0.27 |
-| 8 | 1.51 | 1.19 | 1.73 | 5.28 | 6.00 | 0.23 | 0.20 |
-| 16 | 1.90 | 1.51 | 2.28 | 3.43 | 3.46 | 0.44 | 0.44 |
-| 32 | 1.72 | 1.55 | 1.96 | 3.39 | 3.39 | 0.46 | 0.46 |
-| 64 | 2.08 | 2.01 | 2.31 | 4.98 | 3.20 | 0.40 | 0.63 |
-| 128 | 3.28 | 3.01 | 3.40 | 6.02 | 3.45 | 0.50 | 0.87 |
+| 1 | 1.32 | 0.94 | 1.05 | 2.26 | 2.63 | 0.42 | 0.36 |
+| 2 | 1.42 | 0.94 | 1.07 | 2.86 | 3.01 | 0.33 | 0.31 |
+| 4 | 1.27 | 0.94 | 1.05 | 3.75 | 3.81 | 0.25 | 0.25 |
+| 8 | 1.71 | 1.13 | 1.14 | 5.29 | 5.49 | 0.21 | 0.21 |
+| 16 | 2.07 | 1.34 | 1.53 | 3.01 | 3.02 | 0.45 | 0.44 |
+| 32 | 1.88 | 1.50 | 1.79 | 3.39 | 3.42 | 0.44 | 0.44 |
+| 64 | 2.29 | 2.03 | 2.26 | 4.87 | 3.61 | 0.42 | 0.56 |
+| 128 | 3.70 | 3.06 | 3.40 | 6.00 | 4.04 | 0.51 | 0.76 |
+
+<sub>0.2.2, `run-20260628T230402Z` (default build; `simdutf8` column from `run-20260628T221815Z` on the same instance class, same day). Versus 0.2.1, `verify` at 1–4 B improves 3–5.6× and `slack`/`SlackBuf` improve or hold at every size; `verify` at 8–128 B gives back 10–20% — the cost of the short-range dispatch branch and the larger inlined body on this core — which the same-box three-way A/B in `metal-bench-results/run-20260628T230402Z` quantifies. A 16-byte-pair residual loop variant was tried and rejected: it regressed Neoverse ascii throughput 10–40% at 8–128 B (see CHANGELOG).</sub>
 
 The aarch64 build uses a 32 B/iter NEON `umaxv` ASCII scan (LLVM lowers it to `ldp q0,q1; orr; umaxv; tbnz #7`). The shift-DFA multibyte path needs no NEON: A64 `lsr` already takes the shift amount mod 64, so LLVM elides the intermediate `& 63` masks in the unrolled loop and the on-chain latency is one cycle per step — the same as BMI2's `shrx` on x86.
 
@@ -69,17 +73,17 @@ The aarch64 build uses a 32 B/iter NEON `umaxv` ASCII scan (LLVM lowers it to `l
 
 The shape follows from where the work is and what bounds it at each input size:
 
-- **1–32 B (the short-string regime).** Per-call fixed cost dominates per-byte work. `verify_with_slack` covers a sub-8-byte range with one masked load and has no runtime CPU dispatch. `SlackBuf::verify` adds ~0.7 ns of range-assert overhead. `verify` (safe) covers 2–7 B with an overlapping load pair and 8+ B tails with the last-8-byte window — the stack-copy tail it paid here before 0.2.2 (a libc `memcpy` call at 1–7 B) is gone, so the safe path now tracks the slack path closely on short input (see the A/B table above).
+- **1–32 B (the short-string regime).** Per-call fixed cost dominates per-byte work. `verify_with_slack` covers a sub-8-byte range with one masked load and has no runtime CPU dispatch. `SlackBuf::verify` adds one combined range assert, whose cost (0–0.7 ns) is at or below the cross-run layout noise at this scale. `verify` (safe) covers 2–7 B with an overlapping load pair and 8+ B tails with the last-8-byte window — the stack-copy tail it paid here before 0.2.2 (a libc `memcpy` call at 1–7 B) is gone, so the safe path now tracks the slack path closely on short input (see the A/B table above).
 - **32 B – ~32 KiB (L1-resident, compute-bound).** Throughput is set by instructions per byte. The default build's verified scalar loop plateaus alongside stdlib (which auto-vectorizes its ASCII fast path to the same width); a `+simdutf8` build hands off to simdutf8's Keiser–Lemire kernel and matches it.
 - **~32 KiB – L3 (cache step-downs).** All implementations slow together; relative ordering is unchanged.
 - **Beyond L3 (DRAM-bound).** Throughput is set by memory bandwidth, not the validator. Curves converge towards a common floor.
 
-## Full-sweep plots (0.1.0 — pending refresh)
+## Full-sweep plots
 
-These plots are from the 0.1.0 release on Sapphire Rapids only. They predate the inline-partition fix in `71e3c11`, which improved `verify_with_slack` by 38–64% at 1–32 B, so the slack curves here understate by roughly 2× at the short end. They will be regenerated for the next release.
+Sapphire Rapids, 0.2.2 (`run-20260628T221756Z`), full 1 B – 8 MiB ASCII sweep.
 
 ![throughput vs input size](throughput.svg)
 
 ![speedup vs core::str::from_utf8](throughput-relative.svg)
 
-<sub>ASCII input. `stdlib` is `core::str::from_utf8`; `simdutf8` is `simdutf8::basic::from_utf8`. The `+simdutf8` build is `--features simdutf8` with `-C target-cpu=x86-64-v3`. Raw data is in [`throughput-data.csv`](throughput-data.csv); plots regenerated by `python3 doc/gen-throughput-svg.py`.</sub>
+<sub>ASCII input. `stdlib` is `core::str::from_utf8`; `simdutf8` is `simdutf8::basic::from_utf8`. The `+simdutf8` build is `--features simdutf8` with `-C target-feature=+avx2`. Raw data is in [`throughput-data.csv`](throughput-data.csv); plots regenerated by `python3 doc/gen-throughput-svg.py doc/throughput-data.csv > doc/throughput.svg` (and the `-relative` variant).</sub>
