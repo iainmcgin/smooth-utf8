@@ -48,7 +48,7 @@ ASCII input, ns/call:
 | 64 | 5.07 | 4.62 | 4.58 | 10.09 | 3.94 | 0.46 | 1.17 |
 | 128 | 6.58 | 5.91 | 5.94 | 10.60 | 5.26 | 0.56 | 1.12 |
 
-<sub>0.2.2, `run-20260628T221756Z` (default build; `simdutf8` column from the same run's dev-dependency series). On this box the `SlackBuf` range assert costs nothing measurable against `slack` — at sub-2 ns scales, cross-run code-layout effects are of the same order as one assert.</sub>
+<sub>0.2.2, `run-20260628T221756Z` (default build, which 0.2.3 does not change; `simdutf8` column from the same run's dev-dependency series). On this box the `SlackBuf` range assert costs nothing measurable against `slack` — at sub-2 ns scales, cross-run code-layout effects are of the same order as one assert.</sub>
 
 ## Graviton4 (`c8g.metal-24xl`, Neoverse-V2, default aarch64 build)
 
@@ -65,18 +65,23 @@ ASCII input, ns/call:
 | 64 | 2.29 | 2.03 | 2.26 | 4.87 | 3.61 | 0.42 | 0.56 |
 | 128 | 3.70 | 3.06 | 3.40 | 6.00 | 4.04 | 0.51 | 0.76 |
 
-<sub>0.2.2, `run-20260628T230402Z` (default build; `simdutf8` column from `run-20260628T221815Z` on the same instance class, same day). Versus 0.2.1, `verify` at 1–4 B improves 3–5.6× and `slack`/`SlackBuf` improve or hold at every size; `verify` at 8–128 B gives back 10–20% — the cost of the short-range dispatch branch and the larger inlined body on this core — which the same-box three-way A/B in `metal-bench-results/run-20260628T230402Z` quantifies. A 16-byte-pair residual loop variant was tried and rejected: it regressed Neoverse ascii throughput 10–40% at 8–128 B (see CHANGELOG).</sub>
+<sub>0.2.2, `run-20260628T230402Z` (default build, which 0.2.3 does not change; `simdutf8` column from `run-20260628T221815Z` on the same instance class, same day). Versus 0.2.1, `verify` at 1–4 B improves 3–5.6× and `slack`/`SlackBuf` improve or hold at every size; `verify` at 8–128 B gives back 10–20% — the cost of the short-range dispatch branch and the larger inlined body on this core — which the same-box three-way A/B in `metal-bench-results/run-20260628T230402Z` quantifies. A 16-byte-pair residual loop variant was tried and rejected: it regressed Neoverse ascii throughput 10–40% at 8–128 B (see CHANGELOG).</sub>
 
 The aarch64 build uses a 32 B/iter NEON `umaxv` ASCII scan (LLVM lowers it to `ldp q0,q1; orr; umaxv; tbnz #7`). The shift-DFA multibyte path needs no NEON: A64 `lsr` already takes the shift amount mod 64, so LLVM elides the intermediate `& 63` masks in the unrolled loop and the on-chain latency is one cycle per step — the same as BMI2's `shrx` on x86.
 
 ## What the curves look like
 
-The shape follows from where the work is and what bounds it at each input size:
+The shape follows from where the work is and what bounds it at each input size. The two properties the curves are meant to demonstrate: every smoothutf8 entry point beats `core::str::from_utf8` by 2–5× in the short-string regime, and the `simdutf8` delegation takes over exactly where the SIMD kernel starts winning.
 
-- **1–32 B (the short-string regime).** Per-call fixed cost dominates per-byte work. `verify_with_slack` covers a sub-8-byte range with one masked load and has no runtime CPU dispatch. `SlackBuf::verify` adds one combined range assert, whose cost (0–0.7 ns) is at or below the cross-run layout noise at this scale. `verify` (safe) covers 2–7 B with an overlapping load pair and 8+ B tails with the last-8-byte window — the stack-copy tail it paid here before 0.2.2 (a libc `memcpy` call at 1–7 B) is gone, so the safe path now tracks the slack path closely on short input (see the A/B table above).
-- **32 B – ~32 KiB (L1-resident, compute-bound).** Throughput is set by instructions per byte. The default build's verified scalar loop plateaus alongside stdlib (which auto-vectorizes its ASCII fast path to the same width); a `+simdutf8` build hands off to simdutf8's Keiser–Lemire kernel and matches it.
+- **1–32 B (the short-string regime).** Per-call fixed cost dominates per-byte work. `verify_with_slack` covers a sub-8-byte range with one masked load and has no runtime CPU dispatch. `SlackBuf::verify` adds one combined range assert, whose cost (0–0.7 ns) is at or below the cross-run layout noise at this scale. `verify` (safe) covers 2–7 B with an overlapping load pair and 8+ B tails with the last-8-byte window — the stack-copy tail it paid here before 0.2.2 (a libc `memcpy` call at 1–7 B) is gone, so the safe path now tracks the slack path closely on short input (see the A/B table above). All three sit 2–5× below `core::str` and raw `simdutf8` here, on both architectures.
+- **32–128 B (the crossing).** The SIMD kernel's per-call fixed costs amortize away through this band: at 32 B raw `simdutf8` costs 2.4× the verified path (6.2 vs 2.6 ns), at 64 B the verified-with-AVX2 path still leads (3.04 vs 3.36 ns), and by 128 B `simdutf8` is ahead. The delegation threshold (128 B on x86-64) sits in that crossing — chosen against the `+simdutf8` build's own verified path, not the default build's. On aarch64 the threshold is 64 B, set by the multibyte shapes, where simdutf8's NEON kernel overtakes earliest (see the 0.2.1 changelog); on pure ASCII that trades a little at 64–127 B for the larger multibyte win. Just above the threshold the delegated path carries ~1 ns of threshold-branch plus outlined-call overhead over calling simdutf8 directly (5.6 vs 4.7 ns at 128 B); that fixed cost is the price of protecting short inputs and disappears as a fraction of total within a few hundred bytes.
+- **128 B – ~32 KiB (L1-resident, compute-bound).** Throughput is set by instructions per byte. The default build's verified scalar loop plateaus alongside stdlib (which auto-vectorizes its ASCII fast path to the same width); a `+simdutf8` build runs simdutf8's Keiser–Lemire kernel here and matches its curve.
 - **~32 KiB – L3 (cache step-downs).** All implementations slow together; relative ordering is unchanged.
 - **Beyond L3 (DRAM-bound).** Throughput is set by memory bandwidth, not the validator. Curves converge towards a common floor.
+
+### Default vs `+simdutf8` below the threshold
+
+Below the delegation threshold both builds run the same verified source, but not the same machine code, so the curves are close rather than identical. Three mechanisms separate them. First, `-C target-feature=+avx2` swaps the ASCII prefix scan from the 16-byte SWAR loop to the 32-byte AVX2 scan and re-selects instructions throughout — which is why the `+simdutf8` build is 25–35% *faster* at 64–127 B, and 0.3–1.2 ns slower at 8–16 B, where the wider scan's step granularity does not yet pay (the x86 analogue of the documented NEON trade-off on aarch64). Second, the threshold compare itself exists only with the feature enabled. Third, the delegation call used to drag the entry points past LLVM's inline-cost threshold, adding a 1–3 ns call boundary to every short input — that was the 2× gap in the 0.2.2 plots, fixed in 0.2.3 by outlining the delegation (`#[cold] #[inline(never)]`); below 8 B the two builds now measure identical to within the same-box floor. What holds after 0.2.3: enabling the feature costs at most ~1 ns at any sub-threshold size, and buys 25–35% at 64–127 B plus the full SIMD curve above the threshold.
 
 ## Full-sweep plots
 
