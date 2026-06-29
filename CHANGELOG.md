@@ -1,5 +1,9 @@
 # Changelog
 
+## 0.2.3
+
+- Fix (`feature = "simdutf8"` builds only): outline the simdutf8 delegation behind `#[cold] #[inline(never)]`. With the delegation call and its slice-panic plumbing inline, the public entry points exceeded LLVM's inline-cost threshold and were no longer inlined into callers — and the call boundary cost 1–3 ns per call on sub-threshold inputs — adding 65–230% on top of the validation work itself at 1–32 B (visible in the 0.2.2 full-sweep plots as the gap between the default and `+simdutf8` curves below 64 B). Same-box A/B after the fix: the two builds match exactly below 8 B, the `+simdutf8` build runs 64–127 B 25–35% *faster* than default (the AVX2 prefix scan, previously masked by the call overhead), and a residual 0.3–1.2 ns at 8–16 B remains from the AVX2 scan's 32-byte step granularity — a different, pre-existing mechanism, the x86 analogue of the documented NEON trade-off. Default-feature builds are unaffected.
+
 ## 0.2.2
 
 - Replace the safe path's tail handling. The zero-padded stack-copy tail (`SafeTail`) compiled to a libc `memcpy` call plus a store-to-load-forwarding stall, which dominated `verify`'s latency at 1–7 bytes. Measured on Sapphire Rapids metal (same-box A/B, see `doc/BENCHMARKS.md`): `verify` on 1–4 B ASCII improves 5.0–5.9× (8.8 → 1.8 ns at 1 B), 2–4 B multibyte 2.4–2.6×, and the rewrite's structural cleanup also speeds the slack paths ~35–45% at 1–8 B; sizes ≥ 16 B unchanged within the reproducibility floor. Ranges of 8+ bytes now test the trailing 1–7 bytes with one unmasked in-bounds 8-byte load of `buf[end-8..end]` (overlap with already-validated ASCII is free — proven sign bits are zero); ranges under 8 bytes without slack use a pair of overlapping 4- or 2-byte loads. The `Tail` trait, `SafeTail`, and `SlackTail` are deleted; `verify_with_slack` keeps its single masked load for sub-8-byte ranges. The safe path now never reads outside the input slice and never stores to the stack.

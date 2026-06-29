@@ -173,13 +173,33 @@ pub const SLACK: usize = 8;
 pub fn verify(b: &[u8]) -> bool {
     #[cfg(feature = "simdutf8")]
     if b.len() >= LONG_THRESHOLD {
-        return simdutf8::basic::from_utf8(b).is_ok();
+        return verify_long(b, 0, b.len());
     }
     #[cfg(feature = "verus")]
     proof! { assert(b@.subrange(0, b@.len() as int) =~= b@); }
     // SAFETY: the range is `0..b.len()`, so `start <= end` and
     // `end + 0 <= b.len()` hold trivially.
     unsafe { verify_impl::<0>(b, 0..b.len()) }
+}
+
+/// The `simdutf8` delegation, outlined so it does not count against the
+/// public entry points' inline cost: with the call and its slice-panic
+/// plumbing in the hot body, LLVM stops inlining `verify`/`verify_with_slack`
+/// into callers, and the call boundary alone costs more than validating a
+/// short input (the same mechanism as the 0.2.1 inline-partition fix, one
+/// level up; see CHANGELOG 0.2.3 for the measurements).
+///
+/// Takes `buf` plus indices rather than a pre-built slice so the range
+/// check and its panic path live here, not in the inlined caller bodies —
+/// re-slicing at the call sites would reintroduce the regression. `#[cold]`
+/// is intentional even for long-input-heavy callers: the branch-weight bias
+/// costs at most one mispredict, amortized over a threshold's worth of SIMD
+/// validation, while short calls are the latency-sensitive ones.
+#[cfg(feature = "simdutf8")]
+#[cold]
+#[inline(never)]
+fn verify_long(buf: &[u8], start: usize, end: usize) -> bool {
+    simdutf8::basic::from_utf8(&buf[start..end]).is_ok()
 }
 
 /// Returns `Some(b as &str)` if `b` is well-formed UTF-8.
@@ -268,7 +288,7 @@ pub unsafe fn verify_with_slack(buf: &[u8], range: Range<usize>) -> bool {
     da!(range.end.saturating_add(SLACK) <= buf.len());
     #[cfg(feature = "simdutf8")]
     if range.end - range.start >= LONG_THRESHOLD {
-        return simdutf8::basic::from_utf8(&buf[range]).is_ok();
+        return verify_long(buf, range.start, range.end);
     }
     // SAFETY: `range.start <= range.end` and `range.end + SLACK <= buf.len()`
     // are this function's own documented contract.

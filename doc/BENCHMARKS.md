@@ -80,7 +80,7 @@ The shape follows from where the work is and what bounds it at each input size:
 
 ## Full-sweep plots
 
-Sapphire Rapids, 0.2.2 (`run-20260628T221756Z`), full 1 B – 8 MiB ASCII sweep.
+Sapphire Rapids, 0.2.3 (`run-20260629T192815Z`), full 1 B – 8 MiB ASCII sweep. The `+simdutf8` curve tracks the default curve at the short end (the 0.2.2 plots showed a 2× gap below 64 B from the inline-cost regression fixed in 0.2.3), overtakes it from 64 B via the AVX2 prefix scan, and joins simdutf8's curve above the 128 B delegation threshold.
 
 ![throughput vs input size](throughput.svg)
 
