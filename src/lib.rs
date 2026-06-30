@@ -14,9 +14,9 @@
 //!   once at the buffer level — typically via `SlackBuf::new_add_slack`
 //!   (with `feature = "alloc"`) or [`SlackBuf::new_embedded_slack`] — and
 //!   per-field
-//!   [`verify`](SlackBuf::verify) / [`to_str`](SlackBuf::to_str) /
-//!   [`le_u32`](SlackBuf::le_u32) calls are then safe and skip the per-string
-//!   tail-handling cost.
+//!   [`verify`](SlackBuf::verify) / [`from_utf8`](SlackBuf::from_utf8) /
+//!   [`le_u32`](SlackBuf::le_u32) / [`le_u64`](SlackBuf::le_u64) calls are
+//!   then safe and skip the per-string tail-handling cost.
 //!
 //!   [`verify_with_slack`] is the underlying `unsafe` per-call entry point;
 //!   prefer [`SlackBuf`] for new code.
@@ -37,8 +37,11 @@
 //!   machine) enables a 32-byte/iteration `movemask` ASCII prefix scan
 //!   (no runtime dispatch; not covered by the proofs below) and BMI2
 //!   `shrx` for the shift-DFA (~+40% on the multibyte path).
-//! - **`verus`** is verification-only (CI); it does not change runtime
-//!   behaviour and is not intended to be combined with `simdutf8`.
+//! - **`verus`** is verification-only (CI); it does not affect the default
+//!   build and is not intended to be combined with `simdutf8`. It is
+//!   deliberately non-additive — it swaps `SlackBuf`'s convenience surface
+//!   for the precondition-carrying verified one and requires the pinned
+//!   nightly toolchain — so it must never be enabled by a downstream crate.
 //!
 //! # Verification
 //!
@@ -228,6 +231,7 @@ pub fn from_utf8(b: &[u8]) -> Option<&str> {
 
 /// Renamed to [`from_utf8`].
 #[deprecated(since = "0.2.2", note = "renamed to `from_utf8`")]
+#[doc(hidden)]
 #[inline]
 #[must_use]
 pub fn to_str(b: &[u8]) -> Option<&str> {
@@ -303,8 +307,8 @@ pub use slack_buf::SlackBuf;
 
 mod slack_buf {
     #[cfg(feature = "verus")]
-    use super::{is_valid_utf8, verus_spec, verus_verify};
-    use super::{verify_with_slack, Range, SLACK};
+    use super::{is_valid_utf8, pack32, pack64, verus_spec, verus_verify};
+    use super::{load32, load64, verify_with_slack, Range, SLACK};
     #[cfg(feature = "verus")]
     #[allow(unused_imports)]
     use vstd::prelude::*;
@@ -327,8 +331,14 @@ mod slack_buf {
     // `verus_spec` on inherent-impl methods must be the bare attribute name
     // (the outer `verus_verify` proc-macro matches it literally and does not
     // unwrap `cfg_attr` or path-qualified forms), so the verus impl is a
-    // separate `cfg`-gated block. The non-verus impl below is the runtime
-    // build; bodies are kept in sync.
+    // separate `cfg`-gated block. The split is a trusted seam: this block
+    // verifies the precondition-carrying core of each method, and the
+    // runtime block below replaces each per-call `requires` with a panicking
+    // assert (the buffer-shape `len >= SLACK` requires has no assert — it is
+    // discharged by the constructor-established type invariant), plus the
+    // unverified conveniences (`new`, `new_add_slack`, `from_utf8`,
+    // `to_str`). Keep the shared bodies line-for-line identical when editing
+    // either block.
     #[cfg(feature = "verus")]
     verus_builtin_macros::verus! {
         impl<'a> View for SlackBuf<'a> {
@@ -382,14 +392,37 @@ mod slack_buf {
         pub fn verify(&self, range: Range<usize>) -> bool {
             unsafe { verify_with_slack(self.0, range) }
         }
+
+        #[verus_spec(ret =>
+            requires
+                self@.len() >= SLACK,
+                at <= self@.len() - SLACK,
+            ensures
+                ret == pack32(self@, at as int),
+        )]
+        pub fn le_u32(&self, at: usize) -> u32 {
+            unsafe { load32(self.0, at) }
+        }
+
+        #[verus_spec(ret =>
+            requires
+                self@.len() >= SLACK,
+                at <= self@.len() - SLACK,
+            ensures
+                ret == pack64(self@, at as int),
+        )]
+        pub fn le_u64(&self, at: usize) -> u64 {
+            unsafe { load64(self.0, at) }
+        }
     }
 
     // -- runtime (non-verus) surface ---------------------------------------
 
-    // `le_u32`'s SAFETY argument relies on this; pin it at compile time so a
-    // future change to `SLACK` cannot silently make the load OOB.
+    // The SAFETY arguments of `le_u32` and `le_u64` rely on this; pin it at
+    // compile time so a future change to `SLACK` cannot silently make the
+    // loads OOB.
     #[cfg(not(feature = "verus"))]
-    const _: () = assert!(SLACK >= 4);
+    const _: () = assert!(SLACK >= 8);
 
     #[cfg(not(feature = "verus"))]
     impl<'a> SlackBuf<'a> {
@@ -483,13 +516,15 @@ mod slack_buf {
 
         /// Returns `Some(self.as_bytes()[range] as &str)` if the range is
         /// well-formed UTF-8. Single-scan; the returned slice borrows the
-        /// backing buffer for `'a`.
+        /// backing buffer for `'a`. The validation half is the verified
+        /// [`verify`](Self::verify); the `&str` conversion is the same
+        /// trusted glue as the free [`from_utf8`](super::from_utf8).
         ///
         /// # Panics
         /// Same conditions as [`verify`](Self::verify).
         #[inline]
         #[must_use]
-        pub fn to_str(&self, range: Range<usize>) -> Option<&'a str> {
+        pub fn from_utf8(&self, range: Range<usize>) -> Option<&'a str> {
             if self.verify(range.clone()) {
                 // SAFETY: `verify`'s asserts established
                 // `range.start <= range.end <= len - SLACK <= len`, so
@@ -501,9 +536,25 @@ mod slack_buf {
             }
         }
 
+        /// Renamed to [`from_utf8`](Self::from_utf8), matching the free
+        /// function's rename in 0.2.2.
+        #[deprecated(since = "0.2.4", note = "renamed to `from_utf8`")]
+        #[doc(hidden)]
+        #[inline]
+        #[must_use]
+        pub fn to_str(&self, range: Range<usize>) -> Option<&'a str> {
+            self.from_utf8(range)
+        }
+
         /// Loads 4 bytes at `at..at+4` as a little-endian `u32`. The slack
-        /// invariant (`SLACK >= 4`) makes this a single unaligned load with no
-        /// tail handling.
+        /// invariant (`SLACK >= 8`, of which this load needs only 4) makes
+        /// this a single unaligned load with no tail handling.
+        ///
+        /// The panic check is a *load*-bounds check, not a data-bounds check:
+        /// when `at + 4 > payload_len()`, the value includes padding bytes
+        /// (the load stays in bounds — that is the point of the slack
+        /// invariant), and the caller owns the logical bounds check if
+        /// trailing padding must not be interpreted as data.
         ///
         /// # Panics
         /// If `at > self.payload_len()`.
@@ -511,10 +562,31 @@ mod slack_buf {
         #[must_use]
         pub fn le_u32(&self, at: usize) -> u32 {
             assert!(at <= self.payload_len());
-            // SAFETY: `at <= len - SLACK` and `SLACK >= 4` (const-asserted
-            // above), so `at + 4 <= len`; `as_ptr()` carries provenance over
-            // the full slice and `read_unaligned` avoids alignment UB.
-            u32::from_le(unsafe { self.0.as_ptr().add(at).cast::<u32>().read_unaligned() })
+            // SAFETY: `at <= len - SLACK` and `SLACK >= 8 >= 4`
+            // (const-asserted above), so `at + 4 <= len` — exactly `load32`'s
+            // contract.
+            unsafe { load32(self.0, at) }
+        }
+
+        /// Loads 8 bytes at `at..at+8` as a little-endian `u64`. The slack
+        /// invariant (`SLACK >= 8`) makes this a single unaligned load with no
+        /// tail handling.
+        ///
+        /// The panic check is a *load*-bounds check, not a data-bounds check:
+        /// when `at + 8 > payload_len()`, the value includes padding bytes
+        /// (the load stays in bounds — that is the point of the slack
+        /// invariant), and the caller owns the logical bounds check if
+        /// trailing padding must not be interpreted as data.
+        ///
+        /// # Panics
+        /// If `at > self.payload_len()`.
+        #[inline]
+        #[must_use]
+        pub fn le_u64(&self, at: usize) -> u64 {
+            assert!(at <= self.payload_len());
+            // SAFETY: `at <= len - SLACK` and `SLACK >= 8` (const-asserted
+            // above), so `at + 8 <= len` — exactly `load64`'s contract.
+            unsafe { load64(self.0, at) }
         }
     }
 }

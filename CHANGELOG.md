@@ -1,5 +1,12 @@
 # Changelog
 
+## Unreleased
+
+- Rename `SlackBuf::to_str` to `SlackBuf::from_utf8`, matching the free function's 0.2.2 rename. This reverses 0.2.2's decision to keep the method name (the `CStr::to_str` borrowing-method convention): one small API should not use two names for the same operation, and the consistency win beats the convention. `to_str` remains as a deprecated, doc-hidden alias and will be removed in 0.3.0 together with the free-function alias.
+- Add `SlackBuf::le_u64`: an 8-byte little-endian load with the same load-bounds panic contract as `le_u32`. Both methods now document that the panic check bounds the *load*, not the data — a read at `payload_len()` returns padding bytes by design, and the caller owns the logical bounds check.
+- Verus: `SlackBuf::le_u32` and `le_u64` join the verified surface with the pack-spec postconditions (`ret == pack32/pack64(self@, at)`), and their runtime bodies now route through the RefinedRust-verified leaf loads instead of a hand-rolled pointer read. `cargo verus verify` is now 86/0 (was 84/0).
+- The differential fuzz target now exercises the safe `SlackBuf` surface (`verify`, `from_utf8`, `le_u32`, `le_u64`) alongside the raw entry points.
+
 ## 0.2.3
 
 - Fix (`feature = "simdutf8"` builds only): outline the simdutf8 delegation behind `#[cold] #[inline(never)]`. With the delegation call and its slice-panic plumbing inline, the public entry points exceeded LLVM's inline-cost threshold and were no longer inlined into callers — and the call boundary cost 1–3 ns per call on sub-threshold inputs — adding 65–230% on top of the validation work itself at 1–32 B (visible in the 0.2.2 full-sweep plots as the gap between the default and `+simdutf8` curves below 64 B). Same-box A/B after the fix: below 8 B the call-boundary penalty is gone, leaving residual deltas of 0.1–0.3 ns with no consistent sign across series (−7% to +18%, code-layout scale); the `+simdutf8` build (benchmarked with `-C target-feature=+avx2`, which the feature does not itself enable) runs 64–127 B 25–35% *faster* than default (the AVX2 prefix scan, previously masked by the call overhead); and a residual 0.3–1.2 ns at 8–16 B remains from the AVX2 scan's 32-byte step granularity — a different, pre-existing mechanism, the x86 analogue of the documented NEON trade-off. Default-feature builds are unaffected.

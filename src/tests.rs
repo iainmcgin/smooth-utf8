@@ -36,9 +36,9 @@ fn check(b: &[u8]) {
         "SlackBuf::verify mismatch on {b:x?}"
     );
     assert_eq!(
-        sb.to_str(range),
+        sb.from_utf8(range),
         want_str,
-        "SlackBuf::to_str mismatch on {b:x?}"
+        "SlackBuf::from_utf8 mismatch on {b:x?}"
     );
 }
 
@@ -52,6 +52,16 @@ fn empty() {
 fn to_str_alias() {
     assert_eq!(to_str(b"abc"), Some("abc"));
     assert_eq!(to_str(&[0xFF]), None);
+}
+
+#[test]
+#[allow(deprecated)]
+fn slackbuf_to_str_alias() {
+    let mut buf = std::vec![b'a', b'b', b'c'];
+    buf.extend_from_slice(&[0u8; SLACK]);
+    let sb = SlackBuf::new(&buf).unwrap();
+    assert_eq!(sb.to_str(0..3), Some("abc"));
+    assert_eq!(sb.to_str(0..3), sb.from_utf8(0..3));
 }
 
 #[test]
@@ -239,7 +249,7 @@ fn slackbuf_new_add_slack() {
     let sb = SlackBuf::new_add_slack(&mut v);
     assert_eq!(sb.payload_len(), 3);
     assert_eq!(sb.as_bytes().len(), 3 + SLACK);
-    assert_eq!(sb.to_str(0..3), Some("abc"));
+    assert_eq!(sb.from_utf8(0..3), Some("abc"));
     // After `sb`'s last use the borrow on `v` ends and the padding is
     // observable.
     assert_eq!(v.len(), 3 + SLACK);
@@ -295,6 +305,25 @@ fn slackbuf_verify_panics_on_oob_end() {
 fn slackbuf_le_u32_panics_on_oob() {
     let buf = [0u8; SLACK + 4];
     let _ = SlackBuf::new(&buf).unwrap().le_u32(5);
+}
+
+#[test]
+fn slackbuf_le_u64() {
+    let mut buf = [0u8; SLACK + 8];
+    buf[0..8].copy_from_slice(&0xDEAD_BEEF_CAFE_1234u64.to_le_bytes());
+    buf[8..16].copy_from_slice(&0x0102_0304_0506_0708u64.to_le_bytes());
+    let sb = SlackBuf::new(&buf).unwrap();
+    assert_eq!(sb.le_u64(0), 0xDEAD_BEEF_CAFE_1234);
+    // `at == payload_len()` is the boundary: reads entirely from the slack
+    // region, which is in-bounds and well-defined.
+    assert_eq!(sb.le_u64(8), 0x0102_0304_0506_0708);
+}
+
+#[test]
+#[should_panic(expected = "at <= self.payload_len()")]
+fn slackbuf_le_u64_panics_on_oob() {
+    let buf = [0u8; SLACK + 8];
+    let _ = SlackBuf::new(&buf).unwrap().le_u64(9);
 }
 
 /// Pins the little-endian pack contract of the four leaf loads. The contract

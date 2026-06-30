@@ -55,6 +55,9 @@ simdutf8 = "0.1"
 name = "throughput"
 harness = false
 
+# The [lints] table needs cargo >= 1.74; older toolchains (including the
+# 1.60 MSRV check) ignore it with a warning, so the check-cfg protection is
+# simply absent there.
 [lints.rust]
 unexpected_cfgs = { level = "warn", check-cfg = [
     'cfg(rr)',
