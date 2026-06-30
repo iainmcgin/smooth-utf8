@@ -36,14 +36,15 @@ mod imp {
     pub const STEP: usize = 32;
 
     /// # Safety
-    /// `p + STEP <= end <= buf.len()` on every iteration the loop body runs;
-    /// equivalently, `p <= end <= buf.len()` on entry (the loop guard checks
-    /// `end - p >= STEP` before each load).
+    /// `start <= end` and `end <= buf.len()`. The loop guard then keeps every
+    /// 32-byte load inside `buf[..end]`.
     ///
     /// This module is `cfg(not(feature = "verus"))`; it carries no Verus
-    /// spec and is outside the functional-correctness proof.
+    /// spec and is outside the functional-correctness proof. It is trusted to
+    /// satisfy the verified SWAR `skip`'s contract (see the module docs).
     #[inline]
-    pub fn skip(buf: &[u8], start: usize, end: usize) -> usize {
+    pub unsafe fn skip(buf: &[u8], start: usize, end: usize) -> usize {
+        debug_assert!(start <= end && end <= buf.len());
         let mut p = start;
         // SAFETY: the module is `cfg(target_feature = "avx2")`, so the AVX2
         // intrinsics are sound to call without a runtime check.
@@ -82,9 +83,15 @@ mod imp {
     /// lane on NEON (no `pmovmskb`) costs more than the re-scan saves on the
     /// short inputs this crate is tuned for.
     ///
-    /// Outside the Verus proof; carries no spec.
+    /// # Safety
+    /// `start <= end` and `end <= buf.len()`. The loop guard then keeps every
+    /// 32-byte load inside `buf[..end]`.
+    ///
+    /// Outside the Verus proof; carries no spec. Trusted to satisfy the
+    /// verified SWAR `skip`'s contract (see the module docs).
     #[inline]
-    pub fn skip(buf: &[u8], start: usize, end: usize) -> usize {
+    pub unsafe fn skip(buf: &[u8], start: usize, end: usize) -> usize {
+        debug_assert!(start <= end && end <= buf.len());
         let mut p = start;
         while end - p >= STEP {
             // SAFETY: `p + 32 <= end <= buf.len()`; `vld1q_u8` is an unaligned
@@ -121,12 +128,16 @@ mod imp {
     #[cfg_attr(feature = "verus", verus_verify)]
     pub const STEP: usize = 16;
 
+    /// # Safety
+    /// `start <= end` and `end <= buf.len()`. (Machine-checked as `requires`
+    /// under `--features verus`.)
     #[cfg_attr(feature = "verus", verus_spec(q =>
         requires start <= end, end <= buf@.len(),
         ensures start <= q, q <= end, all_ascii(buf@, start as int, q as int),
     ))]
     #[inline]
-    pub fn skip(buf: &[u8], start: usize, end: usize) -> usize {
+    pub unsafe fn skip(buf: &[u8], start: usize, end: usize) -> usize {
+        da!(start <= end && end <= buf.len());
         let mut p = start;
         #[cfg_attr(feature = "verus", verus_spec(
             invariant

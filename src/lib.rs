@@ -725,7 +725,9 @@ unsafe fn verify_impl<const PAD: usize>(buf: &[u8], range: Range<usize>) -> bool
     // ---- ASCII fast path: full STEP-byte blocks ---------------------------
     // Portable SWAR (16 B/iter) by default; AVX2 or NEON (32 B/iter) when
     // available. Returns at the first non-ASCII block or with `< STEP` left.
-    p = ascii_skip::skip(buf, p, end);
+    // SAFETY: `p == start <= end`, and `end <= buf.len()` follows from this
+    // function's own contract (`end + PAD <= buf.len()`, `PAD >= 0`).
+    p = unsafe { ascii_skip::skip(buf, p, end) };
     if end - p >= ascii_skip::STEP {
         #[cfg(feature = "verus")]
         proof! { lemma_ascii_prefix_iff(buf@, start as int, p as int, end as int); }
