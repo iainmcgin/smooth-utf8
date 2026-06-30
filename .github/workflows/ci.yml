@@ -133,8 +133,9 @@ jobs:
 
   # ── Verus ────────────────────────────────────────────────────────────────
   # Runs inside the verify-tools image (Verus + Z3 pinned by SHA). The image
-  # is built and pushed by verify-tools-image.yml; run that workflow once via
-  # workflow_dispatch before this job can succeed on a fresh repo.
+  # is built and pushed by verify-tools-image.yml; on a fresh repo or fork,
+  # run that workflow once via workflow_dispatch, then replace the digest
+  # below with the one from that run's summary.
   verus:
     runs-on: ubuntu-latest
     timeout-minutes: 15
@@ -142,7 +143,13 @@ jobs:
       contents: read
       packages: read
     container:
-      image: ghcr.io/${{ github.repository }}/verify-tools:latest
+      # Pinned by digest, not tag: a mutable tag would let anyone with GHCR
+      # push access silently swap the toolchain behind the proof gate below.
+      # This digest is `verify-tools:verus-911e4e70ed8e` (Verus pinned in
+      # verify/Dockerfile.tools). Any change that bumps VERUS_REV there must
+      # update this digest in the same change: run the image workflow and
+      # copy the digest from its run summary.
+      image: ghcr.io/${{ github.repository }}/verify-tools@sha256:97a8bffae765edd01c3bd404c4656cffde5edacb54042f9a0c3f268847ad6377
       credentials:
         username: ${{ github.actor }}
         password: ${{ secrets.GITHUB_TOKEN }}
