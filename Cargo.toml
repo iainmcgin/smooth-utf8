@@ -54,7 +54,18 @@ name = "throughput"
 harness = false
 
 [lints.rust]
-unexpected_cfgs = { level = "warn", check-cfg = ['cfg(rr)', 'cfg(verus_keep_ghost)'] }
+unexpected_cfgs = { level = "warn", check-cfg = [
+    'cfg(rr)',
+    'cfg(verus_keep_ghost)',
+    'cfg(docsrs)',
+] }
+
+# docs.rs builds with the user-facing features enabled so the feature-gated
+# API (`SlackBuf::new_add_slack`) renders, annotated with its required
+# feature via `doc(cfg)`. `verus` is verification-only and excluded.
+[package.metadata.docs.rs]
+features = ["alloc", "simdutf8"]
+rustdoc-args = ["--cfg", "docsrs"]
 
 [package.metadata.verus]
 verify = true
