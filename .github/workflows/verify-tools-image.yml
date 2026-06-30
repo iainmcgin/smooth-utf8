@@ -61,9 +61,10 @@ jobs:
           file: verify/Dockerfile.tools
           platforms: linux/amd64
           push: true
-          tags: |
-            ${{ env.IMAGE_BASE }}:${{ steps.revs.outputs.tag }}
-            ${{ env.IMAGE_BASE }}:latest
+          # Only the immutable per-revision tag: CI consumes the image by
+          # digest, and a floating `latest` tag would invite exactly the
+          # mutable-reference trust gap the digest pin closes.
+          tags: ${{ env.IMAGE_BASE }}:${{ steps.revs.outputs.tag }}
           build-args: |
             VERUS_REV=${{ steps.revs.outputs.vs }}
           provenance: mode=max

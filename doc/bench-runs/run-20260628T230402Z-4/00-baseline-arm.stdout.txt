@@ -1,0 +1,234 @@
+=== sysinfo (00-baseline-arm.bench) ===
+Linux bench-host 6.8.0-1057-aws #60~22.04.1-Ubuntu SMP Tue May 26 15:43:58 UTC 2026 aarch64 aarch64 aarch64 GNU/Linux
+Model name:                              Neoverse-V2
+Thread(s) per core:                      1
+Core(s) per socket:                      96
+Socket(s):                               1
+NUMA node(s):                            1
+turbo_disabled=n/a governor=n/a pin_core=4
+=== run 1 / 1 : 00-baseline-arm.bench : baseline-arm.bench --bench --save-baseline cmpbase 'verify/ascii/(smoothutf8|smoothutf8_slack|smoothutf8_slackbuf|std_from_utf8)/(1|2|4|8|16|32|64|128)$' ===
+verify/ascii/smoothutf8/1
+                        time:   [7.2301 ns 7.4428 ns 7.6894 ns]
+                        thrpt:  [124.03 MiB/s 128.13 MiB/s 131.90 MiB/s]
+Found 23 outliers among 250 measurements (9.20%)
+  2 (0.80%) low severe
+  3 (1.20%) low mild
+  5 (2.00%) high mild
+  13 (5.20%) high severe
+verify/ascii/std_from_utf8/1
+                        time:   [2.1965 ns 2.2599 ns 2.3349 ns]
+                        thrpt:  [408.44 MiB/s 422.01 MiB/s 434.18 MiB/s]
+Found 22 outliers among 250 measurements (8.80%)
+  1 (0.40%) low mild
+  8 (3.20%) high mild
+  13 (5.20%) high severe
+verify/ascii/smoothutf8_slack/1
+                        time:   [976.64 ps 1.0050 ns 1.0381 ns]
+                        thrpt:  [918.64 MiB/s 948.95 MiB/s 976.48 MiB/s]
+Found 19 outliers among 250 measurements (7.60%)
+  3 (1.20%) high mild
+  16 (6.40%) high severe
+verify/ascii/smoothutf8_slackbuf/1
+                        time:   [1.8259 ns 1.8801 ns 1.9436 ns]
+                        thrpt:  [490.68 MiB/s 507.24 MiB/s 522.30 MiB/s]
+Found 12 outliers among 250 measurements (4.80%)
+  1 (0.40%) low mild
+  11 (4.40%) high severe
+verify/ascii/smoothutf8/2
+                        time:   [7.2344 ns 7.4519 ns 7.7048 ns]
+                        thrpt:  [247.55 MiB/s 255.95 MiB/s 263.65 MiB/s]
+Found 26 outliers among 250 measurements (10.40%)
+  3 (1.20%) low severe
+  5 (2.00%) low mild
+  4 (1.60%) high mild
+  14 (5.60%) high severe
+verify/ascii/std_from_utf8/2
+                        time:   [2.7995 ns 2.8909 ns 2.9968 ns]
+                        thrpt:  [636.45 MiB/s 659.77 MiB/s 681.32 MiB/s]
+Found 49 outliers among 250 measurements (19.60%)
+  33 (13.20%) low severe
+  3 (1.20%) low mild
+  3 (1.20%) high mild
+  10 (4.00%) high severe
+verify/ascii/smoothutf8_slack/2
+                        time:   [977.41 ps 1.0065 ns 1.0405 ns]
+                        thrpt:  [1.7901 GiB/s 1.8506 GiB/s 1.9057 GiB/s]
+Found 20 outliers among 250 measurements (8.00%)
+  6 (2.40%) high mild
+  14 (5.60%) high severe
+verify/ascii/smoothutf8_slackbuf/2
+                        time:   [1.8262 ns 1.8813 ns 1.9457 ns]
+                        thrpt:  [980.28 MiB/s 1013.8 MiB/s 1.0199 GiB/s]
+Found 34 outliers among 250 measurements (13.60%)
+  3 (1.20%) low severe
+  3 (1.20%) low mild
+  10 (4.00%) high mild
+  18 (7.20%) high severe
+verify/ascii/smoothutf8/4
+                        time:   [3.6540 ns 3.7650 ns 3.8944 ns]
+                        thrpt:  [979.54 MiB/s 1013.2 MiB/s 1.0195 GiB/s]
+Found 34 outliers among 250 measurements (13.60%)
+  3 (1.20%) low severe
+  1 (0.40%) low mild
+  9 (3.60%) high mild
+  21 (8.40%) high severe
+verify/ascii/std_from_utf8/4
+                        time:   [3.6558 ns 3.7686 ns 3.8998 ns]
+                        thrpt:  [978.18 MiB/s 1012.2 MiB/s 1.0190 GiB/s]
+Found 32 outliers among 250 measurements (12.80%)
+  3 (1.20%) low severe
+  1 (0.40%) low mild
+  6 (2.40%) high mild
+  22 (8.80%) high severe
+verify/ascii/smoothutf8_slack/4
+                        time:   [978.59 ps 1.0086 ns 1.0434 ns]
+                        thrpt:  [3.5702 GiB/s 3.6936 GiB/s 3.8068 GiB/s]
+Found 34 outliers among 250 measurements (13.60%)
+  13 (5.20%) high mild
+  21 (8.40%) high severe
+verify/ascii/smoothutf8_slackbuf/4
+                        time:   [1.8283 ns 1.8853 ns 1.9514 ns]
+                        thrpt:  [1.9090 GiB/s 1.9759 GiB/s 2.0376 GiB/s]
+Found 31 outliers among 250 measurements (12.40%)
+  1 (0.40%) low severe
+  3 (1.20%) low mild
+  10 (4.00%) high mild
+  17 (6.80%) high severe
+verify/ascii/smoothutf8/8
+                        time:   [1.4603 ns 1.5023 ns 1.5519 ns]
+                        thrpt:  [4.8009 GiB/s 4.9594 GiB/s 5.1021 GiB/s]
+Found 25 outliers among 250 measurements (10.00%)
+  8 (3.20%) high mild
+  17 (6.80%) high severe
+verify/ascii/std_from_utf8/8
+                        time:   [5.0997 ns 5.2488 ns 5.4249 ns]
+                        thrpt:  [1.3734 GiB/s 1.4195 GiB/s 1.4610 GiB/s]
+Found 41 outliers among 250 measurements (16.40%)
+  2 (0.80%) low severe
+  3 (1.20%) low mild
+  9 (3.60%) high mild
+  27 (10.80%) high severe
+verify/ascii/smoothutf8_slack/8
+                        time:   [1.1504 ns 1.1843 ns 1.2243 ns]
+                        thrpt:  [6.0855 GiB/s 6.2911 GiB/s 6.4763 GiB/s]
+Found 20 outliers among 250 measurements (8.00%)
+  5 (2.00%) low mild
+  1 (0.40%) high mild
+  14 (5.60%) high severe
+verify/ascii/smoothutf8_slackbuf/8
+                        time:   [1.6510 ns 1.7006 ns 1.7584 ns]
+                        thrpt:  [4.2370 GiB/s 4.3811 GiB/s 4.5129 GiB/s]
+Found 12 outliers among 250 measurements (4.80%)
+  1 (0.40%) high mild
+  11 (4.40%) high severe
+verify/ascii/smoothutf8/16
+                        time:   [1.8337 ns 1.8890 ns 1.9540 ns]
+                        thrpt:  [7.6258 GiB/s 7.8883 GiB/s 8.1261 GiB/s]
+Found 15 outliers among 250 measurements (6.00%)
+  3 (1.20%) high mild
+  12 (4.80%) high severe
+verify/ascii/std_from_utf8/16
+                        time:   [2.9285 ns 3.0183 ns 3.1230 ns]
+                        thrpt:  [4.7714 GiB/s 4.9369 GiB/s 5.0884 GiB/s]
+Found 37 outliers among 250 measurements (14.80%)
+  1 (0.40%) low severe
+  1 (0.40%) low mild
+  11 (4.40%) high mild
+  24 (9.60%) high severe
+verify/ascii/smoothutf8_slack/16
+                        time:   [1.4617 ns 1.5065 ns 1.5591 ns]
+                        thrpt:  [9.5574 GiB/s 9.8914 GiB/s 10.195 GiB/s]
+Found 34 outliers among 250 measurements (13.60%)
+  1 (0.40%) low severe
+  10 (4.00%) high mild
+  23 (9.20%) high severe
+verify/ascii/smoothutf8_slackbuf/16
+                        time:   [2.0298 ns 2.0914 ns 2.1623 ns]
+                        thrpt:  [6.8913 GiB/s 7.1250 GiB/s 7.3411 GiB/s]
+Found 19 outliers among 250 measurements (7.60%)
+  1 (0.40%) low severe
+  2 (0.80%) low mild
+  3 (1.20%) high mild
+  13 (5.20%) high severe
+verify/ascii/smoothutf8/32
+                        time:   [1.6490 ns 1.7005 ns 1.7605 ns]
+                        thrpt:  [16.929 GiB/s 17.525 GiB/s 18.073 GiB/s]
+Found 42 outliers among 250 measurements (16.80%)
+  23 (9.20%) high mild
+  19 (7.60%) high severe
+verify/ascii/std_from_utf8/32
+                        time:   [3.2842 ns 3.3807 ns 3.4948 ns]
+                        thrpt:  [8.5277 GiB/s 8.8155 GiB/s 9.0744 GiB/s]
+Found 37 outliers among 250 measurements (14.80%)
+  1 (0.40%) low severe
+  1 (0.40%) low mild
+  12 (4.80%) high mild
+  23 (9.20%) high severe
+verify/ascii/smoothutf8_slack/32
+                        time:   [1.4672 ns 1.5131 ns 1.5671 ns]
+                        thrpt:  [19.018 GiB/s 19.697 GiB/s 20.312 GiB/s]
+Found 11 outliers among 250 measurements (4.40%)
+  1 (0.40%) high mild
+  10 (4.00%) high severe
+verify/ascii/smoothutf8_slackbuf/32
+                        time:   [1.8324 ns 1.8902 ns 1.9573 ns]
+                        thrpt:  [15.226 GiB/s 15.767 GiB/s 16.264 GiB/s]
+Found 23 outliers among 250 measurements (9.20%)
+  6 (2.40%) high mild
+  17 (6.80%) high severe
+verify/ascii/smoothutf8/64
+                        time:   [2.0817 ns 2.1473 ns 2.2237 ns]
+                        thrpt:  [26.804 GiB/s 27.758 GiB/s 28.633 GiB/s]
+Found 18 outliers among 250 measurements (7.20%)
+  3 (1.20%) high mild
+  15 (6.00%) high severe
+verify/ascii/std_from_utf8/64
+                        time:   [4.3812 ns 4.5230 ns 4.6911 ns]
+                        thrpt:  [12.706 GiB/s 13.178 GiB/s 13.605 GiB/s]
+Found 41 outliers among 250 measurements (16.40%)
+  1 (0.40%) low severe
+  1 (0.40%) low mild
+  8 (3.20%) high mild
+  31 (12.40%) high severe
+verify/ascii/smoothutf8_slack/64
+                        time:   [1.9769 ns 2.0371 ns 2.1074 ns]
+                        thrpt:  [28.283 GiB/s 29.260 GiB/s 30.151 GiB/s]
+Found 24 outliers among 250 measurements (9.60%)
+  1 (0.40%) low mild
+  2 (0.80%) high mild
+  21 (8.40%) high severe
+verify/ascii/smoothutf8_slackbuf/64
+                        time:   [2.3134 ns 2.3819 ns 2.4620 ns]
+                        thrpt:  [24.209 GiB/s 25.024 GiB/s 25.765 GiB/s]
+Found 33 outliers among 250 measurements (13.20%)
+  2 (0.80%) low severe
+  8 (3.20%) high mild
+  23 (9.20%) high severe
+verify/ascii/smoothutf8/128
+                        time:   [3.0643 ns 3.1612 ns 3.2733 ns]
+                        thrpt:  [36.418 GiB/s 37.711 GiB/s 38.903 GiB/s]
+Found 16 outliers among 250 measurements (6.40%)
+  5 (2.00%) high mild
+  11 (4.40%) high severe
+verify/ascii/std_from_utf8/128
+                        time:   [5.8481 ns 6.0262 ns 6.2337 ns]
+                        thrpt:  [19.123 GiB/s 19.782 GiB/s 20.384 GiB/s]
+Found 29 outliers among 250 measurements (11.60%)
+  1 (0.40%) low severe
+  1 (0.40%) low mild
+  7 (2.80%) high mild
+  20 (8.00%) high severe
+verify/ascii/smoothutf8_slack/128
+                        time:   [2.9858 ns 3.0783 ns 3.1856 ns]
+                        thrpt:  [37.422 GiB/s 38.725 GiB/s 39.925 GiB/s]
+Found 21 outliers among 250 measurements (8.40%)
+  9 (3.60%) high mild
+  12 (4.80%) high severe
+verify/ascii/smoothutf8_slackbuf/128
+                        time:   [3.2905 ns 3.3892 ns 3.5048 ns]
+                        thrpt:  [34.013 GiB/s 35.173 GiB/s 36.229 GiB/s]
+Found 17 outliers among 250 measurements (6.80%)
+  6 (2.40%) high mild
+  11 (4.40%) high severe
+
+=== END (00-baseline-arm.bench) ===

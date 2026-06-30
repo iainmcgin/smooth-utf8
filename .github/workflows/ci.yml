@@ -52,6 +52,27 @@ jobs:
       - name: Doc build
         run: cargo doc --no-deps --features alloc,simdutf8
 
+  # ── aarch64: native tests on an arm64 runner ─────────────────────────────
+  # The NEON ascii_skip and the lower (64 B) simdutf8 delegation threshold
+  # exist only on aarch64; without this job that code is never compiled,
+  # let alone run, anywhere in CI.
+  test-aarch64:
+    runs-on: ubuntu-24.04-arm
+    timeout-minutes: 10
+    steps:
+      - uses: actions/checkout@9c091bb21b7c1c1d1991bb908d89e4e9dddfe3e0 # v7.0.0
+      - uses: dtolnay/rust-toolchain@29eef336d9b2848a0b548edc03f92a220660cdb8 # stable
+      - uses: Swatinem/rust-cache@c19371144df3bb44fab255c43d04cbc2ab54d1c4 # v2.9.1
+
+      - name: Tests (default)
+        run: cargo test
+
+      - name: Tests (simdutf8)
+        run: cargo test --features simdutf8
+
+      - name: Tests (alloc)
+        run: cargo test --features alloc
+
   # ── MSRV check ───────────────────────────────────────────────────────────
   # MSRV applies to the library; dev-deps (criterion, proptest) need newer
   # Rust, so this checks --lib only.
@@ -133,8 +154,9 @@ jobs:
 
   # ── Verus ────────────────────────────────────────────────────────────────
   # Runs inside the verify-tools image (Verus + Z3 pinned by SHA). The image
-  # is built and pushed by verify-tools-image.yml; run that workflow once via
-  # workflow_dispatch before this job can succeed on a fresh repo.
+  # is built and pushed by verify-tools-image.yml; on a fresh repo or fork,
+  # run that workflow once via workflow_dispatch, then replace the digest
+  # below with the one from that run's summary.
   verus:
     runs-on: ubuntu-latest
     timeout-minutes: 15
@@ -142,7 +164,13 @@ jobs:
       contents: read
       packages: read
     container:
-      image: ghcr.io/${{ github.repository }}/verify-tools:latest
+      # Pinned by digest, not tag: a mutable tag would let anyone with GHCR
+      # push access silently swap the toolchain behind the proof gate below.
+      # This digest is `verify-tools:verus-911e4e70ed8e` (Verus pinned in
+      # verify/Dockerfile.tools). Any change that bumps VERUS_REV there must
+      # update this digest in the same change: run the image workflow and
+      # copy the digest from its run summary.
+      image: ghcr.io/${{ github.repository }}/verify-tools@sha256:97a8bffae765edd01c3bd404c4656cffde5edacb54042f9a0c3f268847ad6377
       credentials:
         username: ${{ github.actor }}
         password: ${{ secrets.GITHUB_TOKEN }}

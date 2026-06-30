@@ -87,6 +87,8 @@
 // on `while` loops (see rust_verify_test/tests/common/mod.rs). The `verus`
 // feature is verification-only and is never built under stock rustc.
 #![cfg_attr(feature = "verus", feature(proc_macro_hygiene))]
+// docs.rs (nightly) only: render feature requirements on gated items.
+#![cfg_attr(docsrs, feature(doc_cfg))]
 #![deny(unsafe_op_in_unsafe_fn)]
 #![warn(missing_docs)]
 // The load helpers below are one or two instructions each and sit in the hot
@@ -438,6 +440,7 @@ mod slack_buf {
         /// `original_len + SLACK`. May reallocate; reserve `SLACK` extra
         /// capacity before filling `v` if that matters.
         #[cfg(feature = "alloc")]
+        #[cfg_attr(docsrs, doc(cfg(feature = "alloc")))]
         #[inline]
         #[must_use]
         pub fn new_add_slack(v: &'a mut alloc::vec::Vec<u8>) -> Self {
@@ -725,7 +728,9 @@ unsafe fn verify_impl<const PAD: usize>(buf: &[u8], range: Range<usize>) -> bool
     // ---- ASCII fast path: full STEP-byte blocks ---------------------------
     // Portable SWAR (16 B/iter) by default; AVX2 or NEON (32 B/iter) when
     // available. Returns at the first non-ASCII block or with `< STEP` left.
-    p = ascii_skip::skip(buf, p, end);
+    // SAFETY: `p == start <= end`, and `end <= buf.len()` follows from this
+    // function's own contract (`end + PAD <= buf.len()`, `PAD >= 0`).
+    p = unsafe { ascii_skip::skip(buf, p, end) };
     if end - p >= ascii_skip::STEP {
         #[cfg(feature = "verus")]
         proof! { lemma_ascii_prefix_iff(buf@, start as int, p as int, end as int); }
