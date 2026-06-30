@@ -13,6 +13,8 @@ exclude = [
     "/.github",
     "/.cargo",
     "/examples",
+    "/metal-bench-results",
+    "/doc/bench-runs",
     "/verify/Dockerfile.tools",
     "/verify/rr-check.sh",
     "/RefinedRust.toml",

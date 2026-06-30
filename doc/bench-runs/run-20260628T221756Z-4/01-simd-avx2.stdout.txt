@@ -1,0 +1,1596 @@
+=== sysinfo (01-simd-avx2.bench) ===
+Linux bench-host 6.8.0-1057-aws #60~22.04.1-Ubuntu SMP Wed May 27 08:16:59 UTC 2026 x86_64 x86_64 x86_64 GNU/Linux
+Model name:                              Intel(R) Xeon(R) Platinum 8488C
+Thread(s) per core:                      2
+Core(s) per socket:                      48
+Socket(s):                               1
+CPU max MHz:                             3800.0000
+NUMA node(s):                            1
+turbo_disabled=1 governor=performance pin_core=4
+=== run 1 / 1 : 01-simd-avx2.bench : simd-avx2.bench --bench --baseline cmpbase 'verify/ascii/' ===
+verify/ascii/smoothutf8/1
+                        time:   [1.7981 ns 1.8526 ns 1.9152 ns]
+                        thrpt:  [497.94 MiB/s 514.77 MiB/s 530.38 MiB/s]
+                 change:
+                        time:   [-0.8030% +3.6322% +7.9790%] (p = 0.11 > 0.05)
+                        thrpt:  [-7.3894% -3.5049% +0.8095%]
+                        No change in performance detected.
+Found 96 outliers among 250 measurements (38.40%)
+  27 (10.80%) low severe
+  16 (6.40%) low mild
+  10 (4.00%) high mild
+  43 (17.20%) high severe
+verify/ascii/simdutf8/1 time:   [3.9103 ns 4.0349 ns 4.1795 ns]
+                        thrpt:  [228.18 MiB/s 236.36 MiB/s 243.89 MiB/s]
+                 change:
+                        time:   [-5.3852% -0.4479% +4.1490%] (p = 0.86 > 0.05)
+                        thrpt:  [-3.9837% +0.4499% +5.6917%]
+                        No change in performance detected.
+Found 21 outliers among 250 measurements (8.40%)
+  6 (2.40%) high mild
+  15 (6.00%) high severe
+verify/ascii/std_from_utf8/1
+                        time:   [3.8568 ns 3.9693 ns 4.1016 ns]
+                        thrpt:  [232.52 MiB/s 240.26 MiB/s 247.27 MiB/s]
+                 change:
+                        time:   [-4.1435% +1.7664% +8.8427%] (p = 0.65 > 0.05)
+                        thrpt:  [-8.1243% -1.7358% +4.3226%]
+                        No change in performance detected.
+Found 29 outliers among 250 measurements (11.60%)
+  7 (2.80%) high mild
+  22 (8.80%) high severe
+verify/ascii/smoothutf8_slack/1
+                        time:   [2.2451 ns 2.3098 ns 2.3854 ns]
+                        thrpt:  [399.79 MiB/s 412.89 MiB/s 424.78 MiB/s]
+                 change:
+                        time:   [+57.104% +66.569% +76.665%] (p = 0.00 < 0.05)
+                        thrpt:  [-43.396% -39.965% -36.348%]
+                        Performance has regressed.
+Found 33 outliers among 250 measurements (13.20%)
+  3 (1.20%) low severe
+  4 (1.60%) low mild
+  8 (3.20%) high mild
+  18 (7.20%) high severe
+verify/ascii/smoothutf8_slackbuf/1
+                        time:   [2.5572 ns 2.6305 ns 2.7170 ns]
+                        thrpt:  [351.01 MiB/s 362.54 MiB/s 372.93 MiB/s]
+                 change:
+                        time:   [+91.354% +100.61% +111.62%] (p = 0.00 < 0.05)
+                        thrpt:  [-52.745% -50.153% -47.741%]
+                        Performance has regressed.
+Found 52 outliers among 250 measurements (20.80%)
+  1 (0.40%) low mild
+  3 (1.20%) high mild
+  48 (19.20%) high severe
+verify/ascii/smoothutf8/2
+                        time:   [1.7385 ns 1.7929 ns 1.8562 ns]
+                        thrpt:  [1.0035 GiB/s 1.0389 GiB/s 1.0714 GiB/s]
+                 change:
+                        time:   [-8.2103% -3.4362% +0.9390%] (p = 0.16 > 0.05)
+                        thrpt:  [-0.9303% +3.5585% +8.9447%]
+                        No change in performance detected.
+Found 38 outliers among 250 measurements (15.20%)
+  7 (2.80%) high mild
+  31 (12.40%) high severe
+verify/ascii/simdutf8/2 time:   [4.4115 ns 4.5457 ns 4.7011 ns]
+                        thrpt:  [405.72 MiB/s 419.60 MiB/s 432.36 MiB/s]
+                 change:
+                        time:   [-6.5018% -1.4042% +3.3777%] (p = 0.61 > 0.05)
+                        thrpt:  [-3.2673% +1.4242% +6.9539%]
+                        No change in performance detected.
+Found 14 outliers among 250 measurements (5.60%)
+  5 (2.00%) high mild
+  9 (3.60%) high severe
+verify/ascii/std_from_utf8/2
+                        time:   [4.5346 ns 4.6785 ns 4.8452 ns]
+                        thrpt:  [393.66 MiB/s 407.68 MiB/s 420.62 MiB/s]
+                 change:
+                        time:   [-10.157% -0.0653% +8.2204%] (p = 0.99 > 0.05)
+                        thrpt:  [-7.5960% +0.0653% +11.305%]
+                        No change in performance detected.
+Found 10 outliers among 250 measurements (4.00%)
+  10 (4.00%) high severe
+verify/ascii/smoothutf8_slack/2
+                        time:   [2.2555 ns 2.3213 ns 2.3984 ns]
+                        thrpt:  [795.24 MiB/s 821.69 MiB/s 845.63 MiB/s]
+                 change:
+                        time:   [+62.445% +70.151% +79.308%] (p = 0.00 < 0.05)
+                        thrpt:  [-44.230% -41.229% -38.441%]
+                        Performance has regressed.
+Found 27 outliers among 250 measurements (10.80%)
+  4 (1.60%) low mild
+  12 (4.80%) high mild
+  11 (4.40%) high severe
+verify/ascii/smoothutf8_slackbuf/2
+                        time:   [2.5570 ns 2.6301 ns 2.7166 ns]
+                        thrpt:  [702.10 MiB/s 725.20 MiB/s 745.94 MiB/s]
+                 change:
+                        time:   [+90.458% +99.674% +109.77%] (p = 0.00 < 0.05)
+                        thrpt:  [-52.329% -49.918% -47.495%]
+                        Performance has regressed.
+Found 44 outliers among 250 measurements (17.60%)
+  1 (0.40%) low severe
+  3 (1.20%) low mild
+  2 (0.80%) high mild
+  38 (15.20%) high severe
+verify/ascii/smoothutf8/4
+                        time:   [1.7812 ns 1.8425 ns 1.9131 ns]
+                        thrpt:  [1.9473 GiB/s 2.0219 GiB/s 2.0915 GiB/s]
+                 change:
+                        time:   [+17.099% +22.688% +28.270%] (p = 0.00 < 0.05)
+                        thrpt:  [-22.040% -18.492% -14.602%]
+                        Performance has regressed.
+Found 28 outliers among 250 measurements (11.20%)
+  18 (7.20%) high mild
+  10 (4.00%) high severe
+verify/ascii/simdutf8/4 time:   [7.1396 ns 7.3967 ns 7.6810 ns]
+                        thrpt:  [496.64 MiB/s 515.73 MiB/s 534.30 MiB/s]
+                 change:
+                        time:   [-2.2897% +4.0650% +11.033%] (p = 0.23 > 0.05)
+                        thrpt:  [-9.9365% -3.9062% +2.3434%]
+                        No change in performance detected.
+Found 10 outliers among 250 measurements (4.00%)
+  4 (1.60%) high mild
+  6 (2.40%) high severe
+verify/ascii/std_from_utf8/4
+                        time:   [6.8258 ns 7.0759 ns 7.3624 ns]
+                        thrpt:  [518.13 MiB/s 539.11 MiB/s 558.86 MiB/s]
+                 change:
+                        time:   [-8.3203% -3.5092% +2.1045%] (p = 0.20 > 0.05)
+                        thrpt:  [-2.0612% +3.6369% +9.0754%]
+                        No change in performance detected.
+Found 63 outliers among 250 measurements (25.20%)
+  1 (0.40%) low severe
+  11 (4.40%) low mild
+  5 (2.00%) high mild
+  46 (18.40%) high severe
+verify/ascii/smoothutf8_slack/4
+                        time:   [2.2480 ns 2.3158 ns 2.3948 ns]
+                        thrpt:  [1.5556 GiB/s 1.6086 GiB/s 1.6572 GiB/s]
+                 change:
+                        time:   [+57.487% +65.647% +74.131%] (p = 0.00 < 0.05)
+                        thrpt:  [-42.572% -39.631% -36.503%]
+                        Performance has regressed.
+Found 35 outliers among 250 measurements (14.00%)
+  5 (2.00%) low severe
+  1 (0.40%) low mild
+  7 (2.80%) high mild
+  22 (8.80%) high severe
+verify/ascii/smoothutf8_slackbuf/4
+                        time:   [2.5594 ns 2.6341 ns 2.7224 ns]
+                        thrpt:  [1.3684 GiB/s 1.4143 GiB/s 1.4555 GiB/s]
+                 change:
+                        time:   [+90.536% +98.910% +107.40%] (p = 0.00 < 0.05)
+                        thrpt:  [-51.784% -49.726% -47.516%]
+                        Performance has regressed.
+Found 46 outliers among 250 measurements (18.40%)
+  1 (0.40%) low mild
+  3 (1.20%) high mild
+  42 (16.80%) high severe
+verify/ascii/smoothutf8/8
+                        time:   [2.5515 ns 2.6307 ns 2.7237 ns]
+                        thrpt:  [2.7354 GiB/s 2.8321 GiB/s 2.9201 GiB/s]
+                 change:
+                        time:   [+15.760% +21.355% +27.325%] (p = 0.00 < 0.05)
+                        thrpt:  [-21.461% -17.597% -13.614%]
+                        Performance has regressed.
+Found 17 outliers among 250 measurements (6.80%)
+  7 (2.80%) high mild
+  10 (4.00%) high severe
+verify/ascii/simdutf8/8 time:   [7.7535 ns 8.0158 ns 8.3155 ns]
+                        thrpt:  [917.49 MiB/s 951.79 MiB/s 983.99 MiB/s]
+                 change:
+                        time:   [-5.8061% -0.9185% +4.0126%] (p = 0.73 > 0.05)
+                        thrpt:  [-3.8578% +0.9270% +6.1640%]
+                        No change in performance detected.
+Found 26 outliers among 250 measurements (10.40%)
+  4 (1.60%) high mild
+  22 (8.80%) high severe
+verify/ascii/std_from_utf8/8
+                        time:   [7.9427 ns 8.2127 ns 8.5239 ns]
+                        thrpt:  [895.06 MiB/s 928.98 MiB/s 960.55 MiB/s]
+                 change:
+                        time:   [-2.5876% +13.146% +41.116%] (p = 0.38 > 0.05)
+                        thrpt:  [-29.136% -11.619% +2.6564%]
+                        No change in performance detected.
+Found 30 outliers among 250 measurements (12.00%)
+  12 (4.80%) high mild
+  18 (7.20%) high severe
+verify/ascii/smoothutf8_slack/8
+                        time:   [4.4461 ns 4.5771 ns 4.7286 ns]
+                        thrpt:  [1.5756 GiB/s 1.6278 GiB/s 1.6758 GiB/s]
+                 change:
+                        time:   [+217.30% +232.16% +247.71%] (p = 0.00 < 0.05)
+                        thrpt:  [-71.241% -69.894% -68.484%]
+                        Performance has regressed.
+Found 15 outliers among 250 measurements (6.00%)
+  4 (1.60%) low severe
+  1 (0.40%) low mild
+  10 (4.00%) high severe
+verify/ascii/smoothutf8_slackbuf/8
+                        time:   [4.9453 ns 5.0938 ns 5.2665 ns]
+                        thrpt:  [1.4147 GiB/s 1.4627 GiB/s 1.5066 GiB/s]
+                 change:
+                        time:   [+274.15% +289.77% +305.98%] (p = 0.00 < 0.05)
+                        thrpt:  [-75.368% -74.344% -73.273%]
+                        Performance has regressed.
+Found 18 outliers among 250 measurements (7.20%)
+  3 (1.20%) low severe
+  3 (1.20%) low mild
+  2 (0.80%) high mild
+  10 (4.00%) high severe
+verify/ascii/smoothutf8/16
+                        time:   [2.7439 ns 2.8256 ns 2.9216 ns]
+                        thrpt:  [5.1004 GiB/s 5.2736 GiB/s 5.4307 GiB/s]
+                 change:
+                        time:   [+8.0300% +12.618% +17.614%] (p = 0.00 < 0.05)
+                        thrpt:  [-14.976% -11.204% -7.4331%]
+                        Performance has regressed.
+Found 12 outliers among 250 measurements (4.80%)
+  2 (0.80%) low mild
+  10 (4.00%) high severe
+verify/ascii/simdutf8/16
+                        time:   [4.4874 ns 4.6353 ns 4.8081 ns]
+                        thrpt:  [3.0992 GiB/s 3.2147 GiB/s 3.3206 GiB/s]
+                 change:
+                        time:   [-9.8203% -3.0409% +3.4958%] (p = 0.43 > 0.05)
+                        thrpt:  [-3.3777% +3.1363% +10.890%]
+                        No change in performance detected.
+Found 11 outliers among 250 measurements (4.40%)
+  11 (4.40%) high severe
+verify/ascii/std_from_utf8/16
+                        time:   [4.9598 ns 5.1463 ns 5.3572 ns]
+                        thrpt:  [2.7815 GiB/s 2.8955 GiB/s 3.0044 GiB/s]
+                 change:
+                        time:   [-5.0696% -0.5862% +3.8001%] (p = 0.80 > 0.05)
+                        thrpt:  [-3.6610% +0.5897% +5.3403%]
+                        No change in performance detected.
+Found 10 outliers among 250 measurements (4.00%)
+  10 (4.00%) high severe
+verify/ascii/smoothutf8_slack/16
+                        time:   [4.5252 ns 4.6643 ns 4.8252 ns]
+                        thrpt:  [3.0882 GiB/s 3.1947 GiB/s 3.2929 GiB/s]
+                 change:
+                        time:   [+147.39% +160.98% +177.17%] (p = 0.00 < 0.05)
+                        thrpt:  [-63.921% -61.683% -59.578%]
+                        Performance has regressed.
+Found 18 outliers among 250 measurements (7.20%)
+  2 (0.80%) low severe
+  5 (2.00%) low mild
+  11 (4.40%) high severe
+verify/ascii/smoothutf8_slackbuf/16
+                        time:   [4.9249 ns 5.0709 ns 5.2417 ns]
+                        thrpt:  [2.8428 GiB/s 2.9385 GiB/s 3.0257 GiB/s]
+                 change:
+                        time:   [+137.32% +146.70% +157.54%] (p = 0.00 < 0.05)
+                        thrpt:  [-61.170% -59.465% -57.863%]
+                        Performance has regressed.
+Found 17 outliers among 250 measurements (6.80%)
+  5 (2.00%) low severe
+  3 (1.20%) low mild
+  9 (3.60%) high severe
+verify/ascii/smoothutf8/32
+                        time:   [3.3469 ns 3.4512 ns 3.5726 ns]
+                        thrpt:  [8.3420 GiB/s 8.6354 GiB/s 8.9043 GiB/s]
+                 change:
+                        time:   [+11.031% +15.622% +20.655%] (p = 0.00 < 0.05)
+                        thrpt:  [-17.119% -13.512% -9.9351%]
+                        Performance has regressed.
+Found 12 outliers among 250 measurements (4.80%)
+  2 (0.80%) low mild
+  10 (4.00%) high severe
+verify/ascii/simdutf8/32
+                        time:   [6.2264 ns 6.4293 ns 6.6671 ns]
+                        thrpt:  [4.4701 GiB/s 4.6354 GiB/s 4.7865 GiB/s]
+                 change:
+                        time:   [-5.1027% +0.7867% +6.2689%] (p = 0.80 > 0.05)
+                        thrpt:  [-5.8991% -0.7806% +5.3771%]
+                        No change in performance detected.
+Found 14 outliers among 250 measurements (5.60%)
+  14 (5.60%) high severe
+verify/ascii/std_from_utf8/32
+                        time:   [6.5657 ns 6.7687 ns 7.0099 ns]
+                        thrpt:  [4.2514 GiB/s 4.4030 GiB/s 4.5391 GiB/s]
+                 change:
+                        time:   [-4.9815% -0.7497% +4.2576%] (p = 0.75 > 0.05)
+                        thrpt:  [-4.0838% +0.7554% +5.2427%]
+                        No change in performance detected.
+Found 85 outliers among 250 measurements (34.00%)
+  39 (15.60%) low mild
+  30 (12.00%) high mild
+  16 (6.40%) high severe
+verify/ascii/smoothutf8_slack/32
+                        time:   [4.0976 ns 4.2287 ns 4.3800 ns]
+                        thrpt:  [6.8042 GiB/s 7.0477 GiB/s 7.2731 GiB/s]
+                 change:
+                        time:   [+63.081% +72.300% +80.848%] (p = 0.00 < 0.05)
+                        thrpt:  [-44.705% -41.962% -38.681%]
+                        Performance has regressed.
+Found 20 outliers among 250 measurements (8.00%)
+  4 (1.60%) low severe
+  6 (2.40%) low mild
+  10 (4.00%) high severe
+verify/ascii/smoothutf8_slackbuf/32
+                        time:   [4.3685 ns 4.5040 ns 4.6621 ns]
+                        thrpt:  [6.3925 GiB/s 6.6168 GiB/s 6.8221 GiB/s]
+                 change:
+                        time:   [+58.655% +70.012% +86.974%] (p = 0.00 < 0.05)
+                        thrpt:  [-46.517% -41.181% -36.970%]
+                        Performance has regressed.
+Found 16 outliers among 250 measurements (6.40%)
+  1 (0.40%) low severe
+  3 (1.20%) low mild
+  12 (4.80%) high severe
+verify/ascii/smoothutf8/64
+                        time:   [3.8025 ns 3.9186 ns 4.0545 ns]
+                        thrpt:  [14.701 GiB/s 15.211 GiB/s 15.675 GiB/s]
+                 change:
+                        time:   [-25.297% -22.061% -18.732%] (p = 0.00 < 0.05)
+                        thrpt:  [+23.050% +28.305% +33.863%]
+                        Performance has improved.
+Found 16 outliers among 250 measurements (6.40%)
+  3 (1.20%) low severe
+  2 (0.80%) low mild
+  1 (0.40%) high mild
+  10 (4.00%) high severe
+verify/ascii/simdutf8/64
+                        time:   [3.3838 ns 3.4834 ns 3.6004 ns]
+                        thrpt:  [16.555 GiB/s 17.111 GiB/s 17.615 GiB/s]
+                 change:
+                        time:   [-17.713% -12.097% -6.4947%] (p = 0.00 < 0.05)
+                        thrpt:  [+6.9458% +13.762% +21.525%]
+                        Performance has improved.
+Found 26 outliers among 250 measurements (10.40%)
+  2 (0.80%) low severe
+  10 (4.00%) low mild
+  3 (1.20%) high mild
+  11 (4.40%) high severe
+verify/ascii/std_from_utf8/64
+                        time:   [9.8080 ns 10.104 ns 10.450 ns]
+                        thrpt:  [5.7037 GiB/s 5.8992 GiB/s 6.0771 GiB/s]
+                 change:
+                        time:   [-4.7948% -0.2173% +4.7756%] (p = 0.93 > 0.05)
+                        thrpt:  [-4.5579% +0.2178% +5.0363%]
+                        No change in performance detected.
+Found 69 outliers among 250 measurements (27.60%)
+  35 (14.00%) low severe
+  15 (6.00%) low mild
+  19 (7.60%) high severe
+verify/ascii/smoothutf8_slack/64
+                        time:   [4.3210 ns 4.4487 ns 4.5950 ns]
+                        thrpt:  [12.972 GiB/s 13.398 GiB/s 13.794 GiB/s]
+                 change:
+                        time:   [-7.4593% -3.2075% +0.9942%] (p = 0.15 > 0.05)
+                        thrpt:  [-0.9844% +3.3138% +8.0606%]
+                        No change in performance detected.
+Found 10 outliers among 250 measurements (4.00%)
+  10 (4.00%) high severe
+verify/ascii/smoothutf8_slackbuf/64
+                        time:   [4.8994 ns 5.0474 ns 5.2197 ns]
+                        thrpt:  [11.419 GiB/s 11.809 GiB/s 12.166 GiB/s]
+                 change:
+                        time:   [+5.0729% +10.001% +15.449%] (p = 0.00 < 0.05)
+                        thrpt:  [-13.382% -9.0915% -4.8280%]
+                        Performance has regressed.
+Found 18 outliers among 250 measurements (7.20%)
+  2 (0.80%) low severe
+  6 (2.40%) low mild
+  10 (4.00%) high severe
+verify/ascii/smoothutf8/128
+                        time:   [4.6883 ns 4.8274 ns 4.9907 ns]
+                        thrpt:  [23.886 GiB/s 24.694 GiB/s 25.427 GiB/s]
+                 change:
+                        time:   [-29.912% -26.628% -23.054%] (p = 0.00 < 0.05)
+                        thrpt:  [+29.961% +36.291% +42.679%]
+                        Performance has improved.
+Found 45 outliers among 250 measurements (18.00%)
+  25 (10.00%) low severe
+  2 (0.80%) low mild
+  3 (1.20%) high mild
+  15 (6.00%) high severe
+verify/ascii/simdutf8/128
+                        time:   [4.6771 ns 4.8128 ns 4.9719 ns]
+                        thrpt:  [23.977 GiB/s 24.769 GiB/s 25.488 GiB/s]
+                 change:
+                        time:   [-12.686% -8.4352% -3.9425%] (p = 0.00 < 0.05)
+                        thrpt:  [+4.1044% +9.2123% +14.530%]
+                        Performance has improved.
+Found 24 outliers among 250 measurements (9.60%)
+  5 (2.00%) low severe
+  6 (2.40%) low mild
+  1 (0.40%) high mild
+  12 (4.80%) high severe
+verify/ascii/std_from_utf8/128
+                        time:   [10.257 ns 10.560 ns 10.915 ns]
+                        thrpt:  [10.922 GiB/s 11.289 GiB/s 11.622 GiB/s]
+                 change:
+                        time:   [-3.7291% +0.3042% +4.7580%] (p = 0.89 > 0.05)
+                        thrpt:  [-4.5419% -0.3033% +3.8735%]
+                        No change in performance detected.
+Found 39 outliers among 250 measurements (15.60%)
+  2 (0.80%) low severe
+  4 (1.60%) low mild
+  1 (0.40%) high mild
+  32 (12.80%) high severe
+verify/ascii/smoothutf8_slack/128
+                        time:   [5.0790 ns 5.2265 ns 5.4011 ns]
+                        thrpt:  [22.071 GiB/s 22.809 GiB/s 23.471 GiB/s]
+                 change:
+                        time:   [-14.515% -10.862% -6.4815%] (p = 0.00 < 0.05)
+                        thrpt:  [+6.9307% +12.186% +16.979%]
+                        Performance has improved.
+Found 23 outliers among 250 measurements (9.20%)
+  4 (1.60%) low severe
+  7 (2.80%) low mild
+  1 (0.40%) high mild
+  11 (4.40%) high severe
+verify/ascii/smoothutf8_slackbuf/128
+                        time:   [5.4844 ns 5.6420 ns 5.8266 ns]
+                        thrpt:  [20.459 GiB/s 21.129 GiB/s 21.736 GiB/s]
+                 change:
+                        time:   [-8.2910% -3.8737% +0.7878%] (p = 0.11 > 0.05)
+                        thrpt:  [-0.7817% +4.0298% +9.0405%]
+                        No change in performance detected.
+Found 27 outliers among 250 measurements (10.80%)
+  4 (1.60%) low severe
+  12 (4.80%) low mild
+  11 (4.40%) high severe
+verify/ascii/smoothutf8/256
+                        time:   [7.2556 ns 7.4790 ns 7.7363 ns]
+                        thrpt:  [30.818 GiB/s 31.878 GiB/s 32.860 GiB/s]
+                 change:
+                        time:   [-29.860% -26.748% -23.466%] (p = 0.00 < 0.05)
+                        thrpt:  [+30.661% +36.516% +42.573%]
+                        Performance has improved.
+Found 33 outliers among 250 measurements (13.20%)
+  13 (5.20%) low severe
+  4 (1.60%) low mild
+  3 (1.20%) high mild
+  13 (5.20%) high severe
+verify/ascii/simdutf8/256
+                        time:   [7.2331 ns 7.4445 ns 7.6937 ns]
+                        thrpt:  [30.989 GiB/s 32.026 GiB/s 32.962 GiB/s]
+                 change:
+                        time:   [-9.6632% -4.7387% +1.1777%] (p = 0.08 > 0.05)
+                        thrpt:  [-1.1640% +4.9745% +10.697%]
+                        No change in performance detected.
+Found 74 outliers among 250 measurements (29.60%)
+  37 (14.80%) low severe
+  16 (6.40%) low mild
+  7 (2.80%) high mild
+  14 (5.60%) high severe
+verify/ascii/std_from_utf8/256
+                        time:   [11.925 ns 12.322 ns 12.776 ns]
+                        thrpt:  [18.661 GiB/s 19.349 GiB/s 19.993 GiB/s]
+                 change:
+                        time:   [-18.106% -4.2441% +7.4647%] (p = 0.67 > 0.05)
+                        thrpt:  [-6.9462% +4.4322% +22.109%]
+                        No change in performance detected.
+Found 19 outliers among 250 measurements (7.60%)
+  8 (3.20%) high mild
+  11 (4.40%) high severe
+verify/ascii/smoothutf8_slack/256
+                        time:   [7.6716 ns 7.8979 ns 8.1642 ns]
+                        thrpt:  [29.203 GiB/s 30.188 GiB/s 31.078 GiB/s]
+                 change:
+                        time:   [-31.032% -27.138% -23.314%] (p = 0.00 < 0.05)
+                        thrpt:  [+30.402% +37.246% +44.995%]
+                        Performance has improved.
+Found 63 outliers among 250 measurements (25.20%)
+  28 (11.20%) low severe
+  20 (8.00%) low mild
+  1 (0.40%) high mild
+  14 (5.60%) high severe
+verify/ascii/smoothutf8_slackbuf/256
+                        time:   [8.0741 ns 8.3160 ns 8.6015 ns]
+                        thrpt:  [27.718 GiB/s 28.670 GiB/s 29.529 GiB/s]
+                 change:
+                        time:   [-21.781% -17.926% -13.946%] (p = 0.00 < 0.05)
+                        thrpt:  [+16.206% +21.842% +27.846%]
+                        Performance has improved.
+Found 43 outliers among 250 measurements (17.20%)
+  24 (9.60%) low severe
+  10 (4.00%) low mild
+  9 (3.60%) high severe
+verify/ascii/smoothutf8/512
+                        time:   [10.635 ns 10.934 ns 11.291 ns]
+                        thrpt:  [42.233 GiB/s 43.610 GiB/s 44.837 GiB/s]
+                 change:
+                        time:   [-38.337% -34.353% -30.388%] (p = 0.00 < 0.05)
+                        thrpt:  [+43.653% +52.329% +62.172%]
+                        Performance has improved.
+Found 68 outliers among 250 measurements (27.20%)
+  36 (14.40%) low severe
+  3 (1.20%) low mild
+  8 (3.20%) high mild
+  21 (8.40%) high severe
+verify/ascii/simdutf8/512
+                        time:   [10.612 ns 10.921 ns 11.289 ns]
+                        thrpt:  [42.241 GiB/s 43.661 GiB/s 44.932 GiB/s]
+                 change:
+                        time:   [-7.4617% -3.8828% -0.2330%] (p = 0.04 < 0.05)
+                        thrpt:  [+0.2335% +4.0396% +8.0633%]
+                        Change within noise threshold.
+Found 59 outliers among 250 measurements (23.60%)
+  48 (19.20%) low severe
+  1 (0.40%) low mild
+  1 (0.40%) high mild
+  9 (3.60%) high severe
+verify/ascii/std_from_utf8/512
+                        time:   [18.713 ns 19.296 ns 19.972 ns]
+                        thrpt:  [23.875 GiB/s 24.711 GiB/s 25.482 GiB/s]
+                 change:
+                        time:   [-6.0303% -1.5754% +2.7601%] (p = 0.52 > 0.05)
+                        thrpt:  [-2.6859% +1.6006% +6.4172%]
+                        No change in performance detected.
+Found 20 outliers among 250 measurements (8.00%)
+  10 (4.00%) high mild
+  10 (4.00%) high severe
+verify/ascii/smoothutf8_slack/512
+                        time:   [11.055 ns 11.375 ns 11.752 ns]
+                        thrpt:  [40.575 GiB/s 41.918 GiB/s 43.132 GiB/s]
+                 change:
+                        time:   [-32.850% -29.687% -26.400%] (p = 0.00 < 0.05)
+                        thrpt:  [+35.870% +42.221% +48.921%]
+                        Performance has improved.
+Found 58 outliers among 250 measurements (23.20%)
+  34 (13.60%) low severe
+  8 (3.20%) low mild
+  3 (1.20%) high mild
+  13 (5.20%) high severe
+verify/ascii/smoothutf8_slackbuf/512
+                        time:   [11.526 ns 11.871 ns 12.273 ns]
+                        thrpt:  [38.853 GiB/s 40.168 GiB/s 41.372 GiB/s]
+                 change:
+                        time:   [-29.010% -24.832% -19.676%] (p = 0.00 < 0.05)
+                        thrpt:  [+24.496% +33.035% +40.865%]
+                        Performance has improved.
+Found 56 outliers among 250 measurements (22.40%)
+  35 (14.00%) low severe
+  10 (4.00%) low mild
+  11 (4.40%) high severe
+verify/ascii/smoothutf8/1024
+                        time:   [16.997 ns 17.480 ns 18.047 ns]
+                        thrpt:  [52.845 GiB/s 54.558 GiB/s 56.109 GiB/s]
+                 change:
+                        time:   [-46.025% -42.770% -38.841%] (p = 0.00 < 0.05)
+                        thrpt:  [+63.508% +74.732% +85.272%]
+                        Performance has improved.
+Found 64 outliers among 250 measurements (25.60%)
+  40 (16.00%) low severe
+  8 (3.20%) high mild
+  16 (6.40%) high severe
+verify/ascii/simdutf8/1024
+                        time:   [16.824 ns 17.326 ns 17.912 ns]
+                        thrpt:  [53.242 GiB/s 55.043 GiB/s 56.684 GiB/s]
+                 change:
+                        time:   [-6.1331% -1.7868% +3.1994%] (p = 0.46 > 0.05)
+                        thrpt:  [-3.1003% +1.8193% +6.5339%]
+                        No change in performance detected.
+Found 18 outliers among 250 measurements (7.20%)
+  3 (1.20%) low severe
+  5 (2.00%) low mild
+  10 (4.00%) high severe
+verify/ascii/std_from_utf8/1024
+                        time:   [32.424 ns 33.415 ns 34.569 ns]
+                        thrpt:  [27.587 GiB/s 28.541 GiB/s 29.412 GiB/s]
+                 change:
+                        time:   [-3.9568% +0.2460% +4.5624%] (p = 0.91 > 0.05)
+                        thrpt:  [-4.3633% -0.2454% +4.1198%]
+                        No change in performance detected.
+Found 10 outliers among 250 measurements (4.00%)
+  10 (4.00%) high severe
+verify/ascii/smoothutf8_slack/1024
+                        time:   [17.419 ns 17.935 ns 18.543 ns]
+                        thrpt:  [51.431 GiB/s 53.173 GiB/s 54.749 GiB/s]
+                 change:
+                        time:   [-44.667% -41.506% -38.884%] (p = 0.00 < 0.05)
+                        thrpt:  [+63.623% +70.956% +80.724%]
+                        Performance has improved.
+Found 52 outliers among 250 measurements (20.80%)
+  32 (12.80%) low severe
+  9 (3.60%) low mild
+  2 (0.80%) high mild
+  9 (3.60%) high severe
+verify/ascii/smoothutf8_slackbuf/1024
+                        time:   [17.870 ns 18.390 ns 19.002 ns]
+                        thrpt:  [50.188 GiB/s 51.860 GiB/s 53.367 GiB/s]
+                 change:
+                        time:   [-41.434% -38.537% -35.290%] (p = 0.00 < 0.05)
+                        thrpt:  [+54.535% +62.700% +70.746%]
+                        Performance has improved.
+Found 64 outliers among 250 measurements (25.60%)
+  46 (18.40%) low severe
+  3 (1.20%) low mild
+  2 (0.80%) high mild
+  13 (5.20%) high severe
+verify/ascii/smoothutf8/2048
+                        time:   [30.694 ns 31.616 ns 32.688 ns]
+                        thrpt:  [58.350 GiB/s 60.329 GiB/s 62.141 GiB/s]
+                 change:
+                        time:   [-48.774% -46.567% -44.409%] (p = 0.00 < 0.05)
+                        thrpt:  [+79.885% +87.152% +95.214%]
+                        Performance has improved.
+Found 60 outliers among 250 measurements (24.00%)
+  40 (16.00%) low severe
+  7 (2.80%) low mild
+  3 (1.20%) high mild
+  10 (4.00%) high severe
+verify/ascii/simdutf8/2048
+                        time:   [30.732 ns 31.686 ns 32.789 ns]
+                        thrpt:  [58.170 GiB/s 60.196 GiB/s 62.063 GiB/s]
+                 change:
+                        time:   [-11.380% -1.4727% +5.9434%] (p = 0.82 > 0.05)
+                        thrpt:  [-5.6099% +1.4947% +12.841%]
+                        No change in performance detected.
+Found 70 outliers among 250 measurements (28.00%)
+  35 (14.00%) low severe
+  7 (2.80%) low mild
+  12 (4.80%) high mild
+  16 (6.40%) high severe
+verify/ascii/std_from_utf8/2048
+                        time:   [60.011 ns 61.790 ns 63.869 ns]
+                        thrpt:  [29.863 GiB/s 30.868 GiB/s 31.783 GiB/s]
+                 change:
+                        time:   [-4.9523% +0.0465% +4.9276%] (p = 0.99 > 0.05)
+                        thrpt:  [-4.6962% -0.0465% +5.2103%]
+                        No change in performance detected.
+Found 10 outliers among 250 measurements (4.00%)
+  10 (4.00%) high severe
+verify/ascii/smoothutf8_slack/2048
+                        time:   [31.152 ns 32.105 ns 33.220 ns]
+                        thrpt:  [57.416 GiB/s 59.409 GiB/s 61.227 GiB/s]
+                 change:
+                        time:   [-47.018% -44.872% -42.743%] (p = 0.00 < 0.05)
+                        thrpt:  [+74.651% +81.397% +88.744%]
+                        Performance has improved.
+Found 56 outliers among 250 measurements (22.40%)
+  32 (12.80%) low severe
+  10 (4.00%) low mild
+  1 (0.40%) high mild
+  13 (5.20%) high severe
+verify/ascii/smoothutf8_slackbuf/2048
+                        time:   [31.392 ns 32.295 ns 33.365 ns]
+                        thrpt:  [57.167 GiB/s 59.060 GiB/s 60.759 GiB/s]
+                 change:
+                        time:   [-55.386% -47.339% -40.988%] (p = 0.00 < 0.05)
+                        thrpt:  [+69.457% +89.895% +124.15%]
+                        Performance has improved.
+Found 15 outliers among 250 measurements (6.00%)
+  1 (0.40%) low severe
+  4 (1.60%) low mild
+  10 (4.00%) high severe
+verify/ascii/smoothutf8/4096
+                        time:   [57.904 ns 59.652 ns 61.679 ns]
+                        thrpt:  [61.847 GiB/s 63.949 GiB/s 65.880 GiB/s]
+                 change:
+                        time:   [-57.695% -56.018% -54.144%] (p = 0.00 < 0.05)
+                        thrpt:  [+118.07% +127.36% +136.38%]
+                        Performance has improved.
+Found 53 outliers among 250 measurements (21.20%)
+  29 (11.60%) low severe
+  6 (2.40%) low mild
+  5 (2.00%) high mild
+  13 (5.20%) high severe
+verify/ascii/simdutf8/4096
+                        time:   [57.713 ns 59.356 ns 61.291 ns]
+                        thrpt:  [62.239 GiB/s 64.268 GiB/s 66.098 GiB/s]
+                 change:
+                        time:   [-1.2514% +5.8147% +15.160%] (p = 0.21 > 0.05)
+                        thrpt:  [-13.164% -5.4951% +1.2672%]
+                        No change in performance detected.
+Found 25 outliers among 250 measurements (10.00%)
+  8 (3.20%) low severe
+  6 (2.40%) low mild
+  1 (0.40%) high mild
+  10 (4.00%) high severe
+verify/ascii/std_from_utf8/4096
+                        time:   [132.94 ns 136.92 ns 141.53 ns]
+                        thrpt:  [26.953 GiB/s 27.861 GiB/s 28.694 GiB/s]
+                 change:
+                        time:   [-3.9807% +0.1480% +4.4729%] (p = 0.95 > 0.05)
+                        thrpt:  [-4.2814% -0.1478% +4.1457%]
+                        No change in performance detected.
+Found 19 outliers among 250 measurements (7.60%)
+  2 (0.80%) low mild
+  4 (1.60%) high mild
+  13 (5.20%) high severe
+verify/ascii/smoothutf8_slack/4096
+                        time:   [58.459 ns 60.257 ns 62.373 ns]
+                        thrpt:  [61.160 GiB/s 63.307 GiB/s 65.254 GiB/s]
+                 change:
+                        time:   [-57.279% -55.632% -53.825%] (p = 0.00 < 0.05)
+                        thrpt:  [+116.57% +125.39% +134.08%]
+                        Performance has improved.
+Found 44 outliers among 250 measurements (17.60%)
+  25 (10.00%) low severe
+  4 (1.60%) low mild
+  3 (1.20%) high mild
+  12 (4.80%) high severe
+verify/ascii/smoothutf8_slackbuf/4096
+                        time:   [58.609 ns 60.315 ns 62.323 ns]
+                        thrpt:  [61.209 GiB/s 63.246 GiB/s 65.088 GiB/s]
+                 change:
+                        time:   [-57.080% -54.936% -52.569%] (p = 0.00 < 0.05)
+                        thrpt:  [+110.83% +121.91% +132.99%]
+                        Performance has improved.
+Found 27 outliers among 250 measurements (10.80%)
+  2 (0.80%) low severe
+  15 (6.00%) low mild
+  10 (4.00%) high severe
+verify/ascii/smoothutf8/8192
+                        time:   [129.15 ns 133.05 ns 137.60 ns]
+                        thrpt:  [55.445 GiB/s 57.340 GiB/s 59.074 GiB/s]
+                 change:
+                        time:   [-48.914% -46.762% -44.385%] (p = 0.00 < 0.05)
+                        thrpt:  [+79.807% +87.836% +95.747%]
+                        Performance has improved.
+Found 39 outliers among 250 measurements (15.60%)
+  14 (5.60%) low severe
+  6 (2.40%) low mild
+  5 (2.00%) high mild
+  14 (5.60%) high severe
+verify/ascii/simdutf8/8192
+                        time:   [112.33 ns 115.62 ns 119.51 ns]
+                        thrpt:  [63.838 GiB/s 65.988 GiB/s 67.920 GiB/s]
+                 change:
+                        time:   [+1.1422% +5.7884% +11.177%] (p = 0.02 < 0.05)
+                        thrpt:  [-10.053% -5.4717% -1.1293%]
+                        Performance has regressed.
+Found 23 outliers among 250 measurements (9.20%)
+  5 (2.00%) low severe
+  8 (3.20%) low mild
+  10 (4.00%) high severe
+verify/ascii/std_from_utf8/8192
+                        time:   [243.85 ns 251.25 ns 259.87 ns]
+                        thrpt:  [29.358 GiB/s 30.366 GiB/s 31.287 GiB/s]
+                 change:
+                        time:   [-5.2284% -0.6140% +3.8027%] (p = 0.81 > 0.05)
+                        thrpt:  [-3.6634% +0.6178% +5.5169%]
+                        No change in performance detected.
+Found 10 outliers among 250 measurements (4.00%)
+  10 (4.00%) high severe
+verify/ascii/smoothutf8_slack/8192
+                        time:   [112.68 ns 115.94 ns 119.75 ns]
+                        thrpt:  [63.709 GiB/s 65.805 GiB/s 67.707 GiB/s]
+                 change:
+                        time:   [-55.148% -52.534% -49.482%] (p = 0.00 < 0.05)
+                        thrpt:  [+97.947% +110.68% +122.96%]
+                        Performance has improved.
+Found 26 outliers among 250 measurements (10.40%)
+  8 (3.20%) low severe
+  7 (2.80%) low mild
+  11 (4.40%) high severe
+verify/ascii/smoothutf8_slackbuf/8192
+                        time:   [113.45 ns 116.94 ns 121.00 ns]
+                        thrpt:  [63.052 GiB/s 65.241 GiB/s 67.247 GiB/s]
+                 change:
+                        time:   [-54.992% -53.073% -51.304%] (p = 0.00 < 0.05)
+                        thrpt:  [+105.36% +113.10% +122.18%]
+                        Performance has improved.
+Found 30 outliers among 250 measurements (12.00%)
+  10 (4.00%) low severe
+  10 (4.00%) low mild
+  10 (4.00%) high severe
+verify/ascii/smoothutf8/16384
+                        time:   [236.06 ns 243.01 ns 251.08 ns]
+                        thrpt:  [60.773 GiB/s 62.791 GiB/s 64.638 GiB/s]
+                 change:
+                        time:   [-50.695% -48.536% -45.977%] (p = 0.00 < 0.05)
+                        thrpt:  [+85.105% +94.311% +102.82%]
+                        Performance has improved.
+Found 20 outliers among 250 measurements (8.00%)
+  7 (2.80%) low severe
+  3 (1.20%) low mild
+  10 (4.00%) high severe
+verify/ascii/simdutf8/16384
+                        time:   [235.75 ns 242.96 ns 251.33 ns]
+                        thrpt:  [60.713 GiB/s 62.804 GiB/s 64.725 GiB/s]
+                 change:
+                        time:   [+13.226% +18.822% +24.415%] (p = 0.00 < 0.05)
+                        thrpt:  [-19.624% -15.841% -11.681%]
+                        Performance has regressed.
+Found 13 outliers among 250 measurements (5.20%)
+  3 (1.20%) low mild
+  10 (4.00%) high severe
+verify/ascii/std_from_utf8/16384
+                        time:   [461.12 ns 474.42 ns 489.97 ns]
+                        thrpt:  [31.142 GiB/s 32.163 GiB/s 33.090 GiB/s]
+                 change:
+                        time:   [-5.0007% +3.0122% +15.408%] (p = 0.63 > 0.05)
+                        thrpt:  [-13.351% -2.9242% +5.2640%]
+                        No change in performance detected.
+Found 11 outliers among 250 measurements (4.40%)
+  1 (0.40%) high mild
+  10 (4.00%) high severe
+verify/ascii/smoothutf8_slack/16384
+                        time:   [236.63 ns 243.75 ns 252.12 ns]
+                        thrpt:  [60.522 GiB/s 62.599 GiB/s 64.484 GiB/s]
+                 change:
+                        time:   [-50.764% -48.580% -46.367%] (p = 0.00 < 0.05)
+                        thrpt:  [+86.453% +94.476% +103.10%]
+                        Performance has improved.
+Found 36 outliers among 250 measurements (14.40%)
+  11 (4.40%) low severe
+  14 (5.60%) low mild
+  11 (4.40%) high severe
+verify/ascii/smoothutf8_slackbuf/16384
+                        time:   [235.84 ns 242.62 ns 250.66 ns]
+                        thrpt:  [60.875 GiB/s 62.893 GiB/s 64.701 GiB/s]
+                 change:
+                        time:   [-50.249% -47.358% -42.977%] (p = 0.00 < 0.05)
+                        thrpt:  [+75.368% +89.962% +101.00%]
+                        Performance has improved.
+Found 23 outliers among 250 measurements (9.20%)
+  4 (1.60%) low severe
+  8 (3.20%) low mild
+  11 (4.40%) high severe
+verify/ascii/smoothutf8/32768
+                        time:   [453.30 ns 467.44 ns 483.91 ns]
+                        thrpt:  [63.064 GiB/s 65.286 GiB/s 67.323 GiB/s]
+                 change:
+                        time:   [-54.438% -50.949% -48.076%] (p = 0.00 < 0.05)
+                        thrpt:  [+92.588% +103.87% +119.48%]
+                        Performance has improved.
+Found 27 outliers among 250 measurements (10.80%)
+  7 (2.80%) low severe
+  3 (1.20%) low mild
+  2 (0.80%) high mild
+  15 (6.00%) high severe
+verify/ascii/simdutf8/32768
+                        time:   [453.31 ns 466.79 ns 482.55 ns]
+                        thrpt:  [63.242 GiB/s 65.377 GiB/s 67.322 GiB/s]
+                 change:
+                        time:   [-4.1733% +0.5863% +5.5744%] (p = 0.83 > 0.05)
+                        thrpt:  [-5.2801% -0.5829% +4.3550%]
+                        No change in performance detected.
+Found 28 outliers among 250 measurements (11.20%)
+  12 (4.80%) low severe
+  5 (2.00%) low mild
+  11 (4.40%) high severe
+verify/ascii/std_from_utf8/32768
+                        time:   [900.86 ns 929.05 ns 961.78 ns]
+                        thrpt:  [31.730 GiB/s 32.848 GiB/s 33.876 GiB/s]
+                 change:
+                        time:   [-4.1818% -0.3807% +3.6270%] (p = 0.86 > 0.05)
+                        thrpt:  [-3.5000% +0.3822% +4.3643%]
+                        No change in performance detected.
+Found 19 outliers among 250 measurements (7.60%)
+  8 (3.20%) high mild
+  11 (4.40%) high severe
+verify/ascii/smoothutf8_slack/32768
+                        time:   [453.92 ns 467.46 ns 483.24 ns]
+                        thrpt:  [63.152 GiB/s 65.284 GiB/s 67.231 GiB/s]
+                 change:
+                        time:   [-51.279% -49.187% -47.120%] (p = 0.00 < 0.05)
+                        thrpt:  [+89.107% +96.801% +105.25%]
+                        Performance has improved.
+Found 18 outliers among 250 measurements (7.20%)
+  5 (2.00%) low severe
+  2 (0.80%) low mild
+  1 (0.40%) high mild
+  10 (4.00%) high severe
+verify/ascii/smoothutf8_slackbuf/32768
+                        time:   [452.66 ns 465.76 ns 481.28 ns]
+                        thrpt:  [63.409 GiB/s 65.523 GiB/s 67.419 GiB/s]
+                 change:
+                        time:   [-54.997% -50.133% -45.424%] (p = 0.00 < 0.05)
+                        thrpt:  [+83.232% +100.53% +122.21%]
+                        Performance has improved.
+Found 10 outliers among 250 measurements (4.00%)
+  10 (4.00%) high severe
+verify/ascii/smoothutf8/65536
+                        time:   [1.3673 µs 1.4098 µs 1.4588 µs]
+                        thrpt:  [41.839 GiB/s 43.293 GiB/s 44.641 GiB/s]
+                 change:
+                        time:   [-41.075% -37.829% -34.454%] (p = 0.00 < 0.05)
+                        thrpt:  [+52.564% +60.846% +69.706%]
+                        Performance has improved.
+Found 44 outliers among 250 measurements (17.60%)
+  32 (12.80%) low mild
+  12 (4.80%) high severe
+verify/ascii/simdutf8/65536
+                        time:   [1.3590 µs 1.3986 µs 1.4451 µs]
+                        thrpt:  [42.235 GiB/s 43.640 GiB/s 44.912 GiB/s]
+                 change:
+                        time:   [-5.5379% -1.2129% +3.0890%] (p = 0.59 > 0.05)
+                        thrpt:  [-2.9965% +1.2278% +5.8626%]
+                        No change in performance detected.
+Found 10 outliers among 250 measurements (4.00%)
+  10 (4.00%) high severe
+verify/ascii/std_from_utf8/65536
+                        time:   [2.2704 µs 2.3361 µs 2.4136 µs]
+                        thrpt:  [25.288 GiB/s 26.127 GiB/s 26.883 GiB/s]
+                 change:
+                        time:   [-5.0147% -0.0007% +4.9681%] (p = 1.00 > 0.05)
+                        thrpt:  [-4.7330% +0.0007% +5.2795%]
+                        No change in performance detected.
+Found 28 outliers among 250 measurements (11.20%)
+  1 (0.40%) low severe
+  2 (0.80%) low mild
+  11 (4.40%) high mild
+  14 (5.60%) high severe
+verify/ascii/smoothutf8_slack/65536
+                        time:   [1.3625 µs 1.4011 µs 1.4467 µs]
+                        thrpt:  [42.188 GiB/s 43.562 GiB/s 44.797 GiB/s]
+                 change:
+                        time:   [-41.760% -38.451% -34.851%] (p = 0.00 < 0.05)
+                        thrpt:  [+53.494% +62.473% +71.704%]
+                        Performance has improved.
+Found 11 outliers among 250 measurements (4.40%)
+  1 (0.40%) high mild
+  10 (4.00%) high severe
+verify/ascii/smoothutf8_slackbuf/65536
+                        time:   [1.3648 µs 1.4070 µs 1.4562 µs]
+                        thrpt:  [41.913 GiB/s 43.380 GiB/s 44.719 GiB/s]
+                 change:
+                        time:   [-43.899% -37.815% -29.935%] (p = 0.00 < 0.05)
+                        thrpt:  [+42.725% +60.811% +78.249%]
+                        Performance has improved.
+Found 12 outliers among 250 measurements (4.80%)
+  12 (4.80%) high severe
+verify/ascii/smoothutf8/131072
+                        time:   [2.7194 µs 2.7991 µs 2.8924 µs]
+                        thrpt:  [42.204 GiB/s 43.610 GiB/s 44.889 GiB/s]
+                 change:
+                        time:   [-41.283% -39.029% -36.840%] (p = 0.00 < 0.05)
+                        thrpt:  [+58.329% +64.012% +70.307%]
+                        Performance has improved.
+Found 53 outliers among 250 measurements (21.20%)
+  28 (11.20%) low severe
+  14 (5.60%) low mild
+  11 (4.40%) high severe
+verify/ascii/simdutf8/131072
+                        time:   [2.7168 µs 2.7957 µs 2.8893 µs]
+                        thrpt:  [42.249 GiB/s 43.664 GiB/s 44.931 GiB/s]
+                 change:
+                        time:   [-19.373% -6.9748% +2.4747%] (p = 0.37 > 0.05)
+                        thrpt:  [-2.4150% +7.4978% +24.028%]
+                        No change in performance detected.
+Found 11 outliers among 250 measurements (4.40%)
+  1 (0.40%) high mild
+  10 (4.00%) high severe
+verify/ascii/std_from_utf8/131072
+                        time:   [4.5292 µs 4.6632 µs 4.8194 µs]
+                        thrpt:  [25.329 GiB/s 26.177 GiB/s 26.952 GiB/s]
+                 change:
+                        time:   [-3.3547% +0.8122% +5.1333%] (p = 0.72 > 0.05)
+                        thrpt:  [-4.8826% -0.8056% +3.4711%]
+                        No change in performance detected.
+Found 23 outliers among 250 measurements (9.20%)
+  3 (1.20%) low severe
+  4 (1.60%) low mild
+  4 (1.60%) high mild
+  12 (4.80%) high severe
+verify/ascii/smoothutf8_slack/131072
+                        time:   [2.7229 µs 2.8005 µs 2.8924 µs]
+                        thrpt:  [42.204 GiB/s 43.589 GiB/s 44.831 GiB/s]
+                 change:
+                        time:   [-42.742% -39.187% -35.644%] (p = 0.00 < 0.05)
+                        thrpt:  [+55.386% +64.439% +74.647%]
+                        Performance has improved.
+Found 10 outliers among 250 measurements (4.00%)
+  10 (4.00%) high severe
+verify/ascii/smoothutf8_slackbuf/131072
+                        time:   [2.7158 µs 2.7949 µs 2.8884 µs]
+                        thrpt:  [42.262 GiB/s 43.677 GiB/s 44.947 GiB/s]
+                 change:
+                        time:   [-45.324% -40.943% -37.371%] (p = 0.00 < 0.05)
+                        thrpt:  [+59.670% +69.329% +82.896%]
+                        Performance has improved.
+Found 10 outliers among 250 measurements (4.00%)
+  1 (0.40%) high mild
+  9 (3.60%) high severe
+verify/ascii/smoothutf8/262144
+                        time:   [5.4363 µs 5.5948 µs 5.7816 µs]
+                        thrpt:  [42.227 GiB/s 43.637 GiB/s 44.910 GiB/s]
+                 change:
+                        time:   [-44.292% -40.547% -37.355%] (p = 0.00 < 0.05)
+                        thrpt:  [+59.631% +68.200% +79.508%]
+                        Performance has improved.
+Found 53 outliers among 250 measurements (21.20%)
+  33 (13.20%) low severe
+  10 (4.00%) low mild
+  10 (4.00%) high severe
+verify/ascii/simdutf8/262144
+                        time:   [5.4296 µs 5.5863 µs 5.7710 µs]
+                        thrpt:  [42.304 GiB/s 43.703 GiB/s 44.965 GiB/s]
+                 change:
+                        time:   [-4.5748% -0.7010% +3.1550%] (p = 0.73 > 0.05)
+                        thrpt:  [-3.0585% +0.7059% +4.7942%]
+                        No change in performance detected.
+Found 10 outliers among 250 measurements (4.00%)
+  10 (4.00%) high severe
+verify/ascii/std_from_utf8/262144
+                        time:   [9.0421 µs 9.3038 µs 9.6114 µs]
+                        thrpt:  [25.401 GiB/s 26.241 GiB/s 27.000 GiB/s]
+                 change:
+                        time:   [-3.7796% +0.4175% +5.2472%] (p = 0.86 > 0.05)
+                        thrpt:  [-4.9856% -0.4157% +3.9280%]
+                        No change in performance detected.
+Found 24 outliers among 250 measurements (9.60%)
+  2 (0.80%) low mild
+  6 (2.40%) high mild
+  16 (6.40%) high severe
+verify/ascii/smoothutf8_slack/262144
+                        time:   [5.4679 µs 5.6374 µs 5.8331 µs]
+                        thrpt:  [41.854 GiB/s 43.307 GiB/s 44.650 GiB/s]
+                 change:
+                        time:   [-40.768% -37.893% -34.506%] (p = 0.00 < 0.05)
+                        thrpt:  [+52.685% +61.013% +68.826%]
+                        Performance has improved.
+Found 40 outliers among 250 measurements (16.00%)
+  29 (11.60%) low mild
+  11 (4.40%) high severe
+verify/ascii/smoothutf8_slackbuf/262144
+                        time:   [5.4300 µs 5.5889 µs 5.7754 µs]
+                        thrpt:  [42.272 GiB/s 43.683 GiB/s 44.961 GiB/s]
+                 change:
+                        time:   [-45.047% -40.941% -37.313%] (p = 0.00 < 0.05)
+                        thrpt:  [+59.522% +69.323% +81.972%]
+                        Performance has improved.
+Found 11 outliers among 250 measurements (4.40%)
+  1 (0.40%) high mild
+  10 (4.00%) high severe
+verify/ascii/smoothutf8/524288
+                        time:   [10.928 µs 11.264 µs 11.654 µs]
+                        thrpt:  [41.897 GiB/s 43.347 GiB/s 44.680 GiB/s]
+                 change:
+                        time:   [-53.466% -42.685% -32.515%] (p = 0.00 < 0.05)
+                        thrpt:  [+48.181% +74.474% +114.89%]
+                        Performance has improved.
+Found 55 outliers among 250 measurements (22.00%)
+  35 (14.00%) low severe
+  8 (3.20%) low mild
+  1 (0.40%) high mild
+  11 (4.40%) high severe
+verify/ascii/simdutf8/524288
+                        time:   [10.916 µs 11.259 µs 11.659 µs]
+                        thrpt:  [41.880 GiB/s 43.367 GiB/s 44.729 GiB/s]
+                 change:
+                        time:   [-5.0675% -0.7404% +3.5526%] (p = 0.75 > 0.05)
+                        thrpt:  [-3.4307% +0.7459% +5.3380%]
+                        No change in performance detected.
+Found 11 outliers among 250 measurements (4.40%)
+  1 (0.40%) high mild
+  10 (4.00%) high severe
+verify/ascii/std_from_utf8/524288
+                        time:   [18.140 µs 18.684 µs 19.313 µs]
+                        thrpt:  [25.283 GiB/s 26.133 GiB/s 26.917 GiB/s]
+                 change:
+                        time:   [-6.5530% -0.7124% +4.8534%] (p = 0.82 > 0.05)
+                        thrpt:  [-4.6287% +0.7176% +7.0125%]
+                        No change in performance detected.
+Found 34 outliers among 250 measurements (13.60%)
+  1 (0.40%) low severe
+  6 (2.40%) low mild
+  10 (4.00%) high mild
+  17 (6.80%) high severe
+verify/ascii/smoothutf8_slack/524288
+                        time:   [10.922 µs 11.263 µs 11.662 µs]
+                        thrpt:  [41.869 GiB/s 43.351 GiB/s 44.706 GiB/s]
+                 change:
+                        time:   [-41.454% -39.077% -36.478%] (p = 0.00 < 0.05)
+                        thrpt:  [+57.427% +64.141% +70.806%]
+                        Performance has improved.
+Found 10 outliers among 250 measurements (4.00%)
+  10 (4.00%) high severe
+verify/ascii/smoothutf8_slackbuf/524288
+                        time:   [10.870 µs 11.187 µs 11.561 µs]
+                        thrpt:  [42.234 GiB/s 43.648 GiB/s 44.918 GiB/s]
+                 change:
+                        time:   [-42.920% -40.071% -37.541%] (p = 0.00 < 0.05)
+                        thrpt:  [+60.105% +66.863% +75.193%]
+                        Performance has improved.
+Found 11 outliers among 250 measurements (4.40%)
+  2 (0.80%) high mild
+  9 (3.60%) high severe
+verify/ascii/smoothutf8/1048576
+                        time:   [21.845 µs 22.488 µs 23.236 µs]
+                        thrpt:  [42.029 GiB/s 43.427 GiB/s 44.703 GiB/s]
+                 change:
+                        time:   [-40.888% -37.944% -34.448%] (p = 0.00 < 0.05)
+                        thrpt:  [+52.551% +61.145% +69.169%]
+                        Performance has improved.
+Found 12 outliers among 250 measurements (4.80%)
+  12 (4.80%) high severe
+verify/ascii/simdutf8/1048576
+                        time:   [21.825 µs 22.517 µs 23.321 µs]
+                        thrpt:  [41.875 GiB/s 43.370 GiB/s 44.746 GiB/s]
+                 change:
+                        time:   [-5.8082% -1.2162% +3.4025%] (p = 0.62 > 0.05)
+                        thrpt:  [-3.2905% +1.2312% +6.1664%]
+                        No change in performance detected.
+Found 11 outliers among 250 measurements (4.40%)
+  1 (0.40%) high mild
+  10 (4.00%) high severe
+verify/ascii/std_from_utf8/1048576
+                        time:   [36.279 µs 37.371 µs 38.631 µs]
+                        thrpt:  [25.279 GiB/s 26.132 GiB/s 26.918 GiB/s]
+                 change:
+                        time:   [-3.9722% +0.6306% +5.4891%] (p = 0.80 > 0.05)
+                        thrpt:  [-5.2035% -0.6267% +4.1365%]
+                        No change in performance detected.
+Found 27 outliers among 250 measurements (10.80%)
+  1 (0.40%) low severe
+  5 (2.00%) low mild
+  8 (3.20%) high mild
+  13 (5.20%) high severe
+verify/ascii/smoothutf8_slack/1048576
+                        time:   [21.850 µs 22.538 µs 23.332 µs]
+                        thrpt:  [41.855 GiB/s 43.330 GiB/s 44.693 GiB/s]
+                 change:
+                        time:   [-45.127% -40.751% -37.087%] (p = 0.00 < 0.05)
+                        thrpt:  [+58.950% +68.780% +82.241%]
+                        Performance has improved.
+Found 40 outliers among 250 measurements (16.00%)
+  28 (11.20%) low mild
+  2 (0.80%) high mild
+  10 (4.00%) high severe
+verify/ascii/smoothutf8_slackbuf/1048576
+                        time:   [21.830 µs 22.512 µs 23.309 µs]
+                        thrpt:  [41.897 GiB/s 43.379 GiB/s 44.734 GiB/s]
+                 change:
+                        time:   [-41.535% -39.101% -36.593%] (p = 0.00 < 0.05)
+                        thrpt:  [+57.712% +64.205% +71.044%]
+                        Performance has improved.
+Found 10 outliers among 250 measurements (4.00%)
+  10 (4.00%) high severe
+verify/ascii/smoothutf8/2097152
+                        time:   [52.266 µs 53.829 µs 55.657 µs]
+                        thrpt:  [35.092 GiB/s 36.284 GiB/s 37.369 GiB/s]
+                 change:
+                        time:   [-40.485% -36.904% -33.538%] (p = 0.00 < 0.05)
+                        thrpt:  [+50.461% +58.488% +68.024%]
+                        Performance has improved.
+Found 11 outliers among 250 measurements (4.40%)
+  11 (4.40%) high severe
+verify/ascii/simdutf8/2097152
+                        time:   [52.307 µs 53.826 µs 55.612 µs]
+                        thrpt:  [35.121 GiB/s 36.286 GiB/s 37.340 GiB/s]
+                 change:
+                        time:   [-7.5125% -0.9890% +5.4031%] (p = 0.80 > 0.05)
+                        thrpt:  [-5.1261% +0.9989% +8.1228%]
+                        No change in performance detected.
+Found 14 outliers among 250 measurements (5.60%)
+  3 (1.20%) low mild
+  11 (4.40%) high severe
+verify/ascii/std_from_utf8/2097152
+                        time:   [83.200 µs 85.630 µs 88.453 µs]
+                        thrpt:  [22.081 GiB/s 22.809 GiB/s 23.475 GiB/s]
+                 change:
+                        time:   [-5.6127% -0.3629% +4.8574%] (p = 0.90 > 0.05)
+                        thrpt:  [-4.6324% +0.3642% +5.9465%]
+                        No change in performance detected.
+Found 15 outliers among 250 measurements (6.00%)
+  2 (0.80%) low mild
+  13 (5.20%) high severe
+verify/ascii/smoothutf8_slack/2097152
+                        time:   [52.197 µs 53.717 µs 55.496 µs]
+                        thrpt:  [35.194 GiB/s 36.360 GiB/s 37.418 GiB/s]
+                 change:
+                        time:   [-39.010% -35.847% -32.540%] (p = 0.00 < 0.05)
+                        thrpt:  [+48.237% +55.877% +63.961%]
+                        Performance has improved.
+Found 12 outliers among 250 measurements (4.80%)
+  1 (0.40%) high mild
+  11 (4.40%) high severe
+verify/ascii/smoothutf8_slackbuf/2097152
+                        time:   [52.411 µs 54.020 µs 55.903 µs]
+                        thrpt:  [34.938 GiB/s 36.156 GiB/s 37.265 GiB/s]
+                 change:
+                        time:   [-38.207% -35.763% -33.320%] (p = 0.00 < 0.05)
+                        thrpt:  [+49.971% +55.673% +61.831%]
+                        Performance has improved.
+Found 13 outliers among 250 measurements (5.20%)
+  2 (0.80%) low mild
+  11 (4.40%) high severe
+verify/ascii/smoothutf8/4194304
+                        time:   [164.50 µs 169.28 µs 174.84 µs]
+                        thrpt:  [22.341 GiB/s 23.076 GiB/s 23.746 GiB/s]
+                 change:
+                        time:   [-16.525% -10.267% -0.5101%] (p = 0.01 < 0.05)
+                        thrpt:  [+0.5127% +11.441% +19.796%]
+                        Change within noise threshold.
+Found 34 outliers among 250 measurements (13.60%)
+  3 (1.20%) low severe
+  11 (4.40%) low mild
+  3 (1.20%) high mild
+  17 (6.80%) high severe
+verify/ascii/simdutf8/4194304
+                        time:   [164.98 µs 169.96 µs 175.72 µs]
+                        thrpt:  [22.230 GiB/s 22.983 GiB/s 23.676 GiB/s]
+                 change:
+                        time:   [-5.9947% -0.6743% +4.0437%] (p = 0.81 > 0.05)
+                        thrpt:  [-3.8866% +0.6789% +6.3769%]
+                        No change in performance detected.
+Found 22 outliers among 250 measurements (8.80%)
+  1 (0.40%) low severe
+  2 (0.80%) low mild
+  5 (2.00%) high mild
+  14 (5.60%) high severe
+verify/ascii/std_from_utf8/4194304
+                        time:   [192.55 µs 197.68 µs 203.50 µs]
+                        thrpt:  [19.195 GiB/s 19.760 GiB/s 20.287 GiB/s]
+                 change:
+                        time:   [-5.5720% -0.9702% +3.2106%] (p = 0.69 > 0.05)
+                        thrpt:  [-3.1107% +0.9797% +5.9008%]
+                        No change in performance detected.
+Found 22 outliers among 250 measurements (8.80%)
+  5 (2.00%) low mild
+  2 (0.80%) high mild
+  15 (6.00%) high severe
+verify/ascii/smoothutf8_slack/4194304
+                        time:   [164.69 µs 169.51 µs 175.11 µs]
+                        thrpt:  [22.308 GiB/s 23.044 GiB/s 23.719 GiB/s]
+                 change:
+                        time:   [-17.177% -13.128% -8.0531%] (p = 0.00 < 0.05)
+                        thrpt:  [+8.7584% +15.112% +20.740%]
+                        Performance has improved.
+Found 28 outliers among 250 measurements (11.20%)
+  3 (1.20%) low severe
+  2 (0.80%) low mild
+  6 (2.40%) high mild
+  17 (6.80%) high severe
+verify/ascii/smoothutf8_slackbuf/4194304
+                        time:   [165.01 µs 170.02 µs 175.78 µs]
+                        thrpt:  [22.223 GiB/s 22.976 GiB/s 23.673 GiB/s]
+                 change:
+                        time:   [-17.240% -13.823% -10.273%] (p = 0.00 < 0.05)
+                        thrpt:  [+11.450% +16.040% +20.831%]
+                        Performance has improved.
+Found 24 outliers among 250 measurements (9.60%)
+  1 (0.40%) low severe
+  4 (1.60%) low mild
+  6 (2.40%) high mild
+  13 (5.20%) high severe
+verify/ascii/smoothutf8/8388608
+                        time:   [331.37 µs 340.79 µs 351.83 µs]
+                        thrpt:  [22.205 GiB/s 22.925 GiB/s 23.576 GiB/s]
+                 change:
+                        time:   [-16.945% -13.916% -10.515%] (p = 0.00 < 0.05)
+                        thrpt:  [+11.751% +16.165% +20.402%]
+                        Performance has improved.
+Found 18 outliers among 250 measurements (7.20%)
+  1 (0.40%) low severe
+  1 (0.40%) low mild
+  5 (2.00%) high mild
+  11 (4.40%) high severe
+verify/ascii/simdutf8/8388608
+                        time:   [331.84 µs 341.38 µs 352.50 µs]
+                        thrpt:  [22.163 GiB/s 22.885 GiB/s 23.543 GiB/s]
+                 change:
+                        time:   [-5.4861% +0.3369% +6.8928%] (p = 0.92 > 0.05)
+                        thrpt:  [-6.4483% -0.3357% +5.8046%]
+                        No change in performance detected.
+Found 21 outliers among 250 measurements (8.40%)
+  1 (0.40%) low severe
+  4 (1.60%) low mild
+  1 (0.40%) high mild
+  15 (6.00%) high severe
+verify/ascii/std_from_utf8/8388608
+                        time:   [387.69 µs 398.38 µs 410.52 µs]
+                        thrpt:  [19.031 GiB/s 19.611 GiB/s 20.151 GiB/s]
+                 change:
+                        time:   [-8.3230% -1.5516% +4.4845%] (p = 0.69 > 0.05)
+                        thrpt:  [-4.2920% +1.5761% +9.0786%]
+                        No change in performance detected.
+Found 16 outliers among 250 measurements (6.40%)
+  1 (0.40%) high mild
+  15 (6.00%) high severe
+verify/ascii/smoothutf8_slack/8388608
+                        time:   [331.14 µs 340.49 µs 351.37 µs]
+                        thrpt:  [22.234 GiB/s 22.945 GiB/s 23.593 GiB/s]
+                 change:
+                        time:   [-18.530% -14.736% -11.016%] (p = 0.00 < 0.05)
+                        thrpt:  [+12.380% +17.283% +22.745%]
+                        Performance has improved.
+Found 17 outliers among 250 measurements (6.80%)
+  1 (0.40%) low severe
+  1 (0.40%) low mild
+  4 (1.60%) high mild
+  11 (4.40%) high severe
+verify/ascii/smoothutf8_slackbuf/8388608
+                        time:   [331.71 µs 341.28 µs 352.43 µs]
+                        thrpt:  [22.168 GiB/s 22.892 GiB/s 23.552 GiB/s]
+                 change:
+                        time:   [-17.034% -12.417% -5.9222%] (p = 0.00 < 0.05)
+                        thrpt:  [+6.2950% +14.177% +20.531%]
+                        Performance has improved.
+Found 16 outliers among 250 measurements (6.40%)
+  1 (0.40%) low severe
+  2 (0.80%) high mild
+  13 (5.20%) high severe
+verify/ascii/smoothutf8/16777216
+                        time:   [662.44 µs 682.37 µs 702.69 µs]
+                        thrpt:  [22.236 GiB/s 22.898 GiB/s 23.587 GiB/s]
+                 change:
+                        time:   [-17.316% -13.944% -10.001%] (p = 0.00 < 0.05)
+                        thrpt:  [+11.112% +16.204% +20.942%]
+                        Performance has improved.
+Found 11 outliers among 250 measurements (4.40%)
+  1 (0.40%) high mild
+  10 (4.00%) high severe
+verify/ascii/simdutf8/16777216
+                        time:   [665.69 µs 685.73 µs 709.04 µs]
+                        thrpt:  [22.037 GiB/s 22.786 GiB/s 23.472 GiB/s]
+                 change:
+                        time:   [-3.7999% +0.4717% +4.9186%] (p = 0.85 > 0.05)
+                        thrpt:  [-4.6880% -0.4695% +3.9500%]
+                        No change in performance detected.
+Found 14 outliers among 250 measurements (5.60%)
+  3 (1.20%) high mild
+  11 (4.40%) high severe
+verify/ascii/std_from_utf8/16777216
+                        time:   [772.79 µs 796.71 µs 821.07 µs]
+                        thrpt:  [19.030 GiB/s 19.612 GiB/s 20.219 GiB/s]
+                 change:
+                        time:   [-4.4184% -0.0829% +4.0581%] (p = 0.91 > 0.05)
+                        thrpt:  [-3.8998% +0.0830% +4.6227%]
+                        No change in performance detected.
+Found 21 outliers among 250 measurements (8.40%)
+  9 (3.60%) high mild
+  12 (4.80%) high severe
+verify/ascii/smoothutf8_slack/16777216
+                        time:   [662.43 µs 682.35 µs 702.68 µs]
+                        thrpt:  [22.236 GiB/s 22.899 GiB/s 23.588 GiB/s]
+                 change:
+                        time:   [-17.733% -14.180% -10.369%] (p = 0.00 < 0.05)
+                        thrpt:  [+11.568% +16.522% +21.556%]
+                        Performance has improved.
+Found 14 outliers among 250 measurements (5.60%)
+  3 (1.20%) high mild
+  11 (4.40%) high severe
+verify/ascii/smoothutf8_slackbuf/16777216
+                        time:   [665.70 µs 685.69 µs 708.92 µs]
+                        thrpt:  [22.041 GiB/s 22.787 GiB/s 23.472 GiB/s]
+                 change:
+                        time:   [-17.430% -13.770% -9.9354%] (p = 0.00 < 0.05)
+                        thrpt:  [+11.031% +15.969% +21.110%]
+                        Performance has improved.
+Found 12 outliers among 250 measurements (4.80%)
+  12 (4.80%) high severe
+verify/ascii/smoothutf8/33554432
+                        time:   [1.3255 ms 1.3667 ms 1.4143 ms]
+                        thrpt:  [22.096 GiB/s 22.865 GiB/s 23.576 GiB/s]
+                 change:
+                        time:   [-17.687% -14.051% -10.137%] (p = 0.00 < 0.05)
+                        thrpt:  [+11.281% +16.349% +21.488%]
+                        Performance has improved.
+Found 14 outliers among 250 measurements (5.60%)
+  1 (0.40%) high mild
+  13 (5.20%) high severe
+verify/ascii/simdutf8/33554432
+                        time:   [1.3255 ms 1.3667 ms 1.4087 ms]
+                        thrpt:  [22.184 GiB/s 22.865 GiB/s 23.576 GiB/s]
+                 change:
+                        time:   [-3.8194% +0.1159% +4.6549%] (p = 0.91 > 0.05)
+                        thrpt:  [-4.4478% -0.1158% +3.9711%]
+                        No change in performance detected.
+Found 15 outliers among 250 measurements (6.00%)
+  5 (2.00%) high mild
+  10 (4.00%) high severe
+verify/ascii/std_from_utf8/33554432
+                        time:   [1.5517 ms 1.5980 ms 1.6518 ms]
+                        thrpt:  [18.918 GiB/s 19.555 GiB/s 20.139 GiB/s]
+                 change:
+                        time:   [-4.1231% +0.2068% +4.7690%] (p = 0.90 > 0.05)
+                        thrpt:  [-4.5520% -0.2063% +4.3004%]
+                        No change in performance detected.
+Found 24 outliers among 250 measurements (9.60%)
+  10 (4.00%) high mild
+  14 (5.60%) high severe
+verify/ascii/smoothutf8_slack/33554432
+                        time:   [1.3256 ms 1.3667 ms 1.4086 ms]
+                        thrpt:  [22.186 GiB/s 22.866 GiB/s 23.575 GiB/s]
+                 change:
+                        time:   [-16.863% -13.384% -9.7737%] (p = 0.00 < 0.05)
+                        thrpt:  [+10.832% +15.452% +20.283%]
+                        Performance has improved.
+Found 13 outliers among 250 measurements (5.20%)
+  3 (1.20%) high mild
+  10 (4.00%) high severe
+verify/ascii/smoothutf8_slackbuf/33554432
+                        time:   [1.3255 ms 1.3667 ms 1.4087 ms]
+                        thrpt:  [22.184 GiB/s 22.865 GiB/s 23.576 GiB/s]
+                 change:
+                        time:   [-17.673% -13.808% -10.256%] (p = 0.00 < 0.05)
+                        thrpt:  [+11.428% +16.020% +21.467%]
+                        Performance has improved.
+Found 12 outliers among 250 measurements (4.80%)
+  1 (0.40%) low mild
+  1 (0.40%) high mild
+  10 (4.00%) high severe
+verify/ascii/smoothutf8/67108864
+                        time:   [2.6680 ms 2.7477 ms 2.8291 ms]
+                        thrpt:  [22.091 GiB/s 22.746 GiB/s 23.426 GiB/s]
+                 change:
+                        time:   [-19.413% -16.237% -12.577%] (p = 0.00 < 0.05)
+                        thrpt:  [+14.387% +19.384% +24.090%]
+                        Performance has improved.
+Found 16 outliers among 250 measurements (6.40%)
+  6 (2.40%) high mild
+  10 (4.00%) high severe
+verify/ascii/simdutf8/67108864
+                        time:   [2.6809 ms 2.7611 ms 2.8543 ms]
+                        thrpt:  [21.897 GiB/s 22.636 GiB/s 23.313 GiB/s]
+                 change:
+                        time:   [-3.9427% +0.2915% +4.7218%] (p = 0.91 > 0.05)
+                        thrpt:  [-4.5089% -0.2906% +4.1046%]
+                        No change in performance detected.
+Found 19 outliers among 250 measurements (7.60%)
+  8 (3.20%) high mild
+  11 (4.40%) high severe
+verify/ascii/std_from_utf8/67108864
+                        time:   [3.1878 ms 3.2803 ms 3.3878 ms]
+                        thrpt:  [18.449 GiB/s 19.053 GiB/s 19.606 GiB/s]
+                 change:
+                        time:   [-4.6679% -0.5564% +3.7517%] (p = 0.76 > 0.05)
+                        thrpt:  [-3.6160% +0.5596% +4.8965%]
+                        No change in performance detected.
+Found 18 outliers among 250 measurements (7.20%)
+  6 (2.40%) high mild
+  12 (4.80%) high severe
+verify/ascii/smoothutf8_slack/67108864
+                        time:   [2.6684 ms 2.7482 ms 2.8292 ms]
+                        thrpt:  [22.091 GiB/s 22.742 GiB/s 23.422 GiB/s]
+                 change:
+                        time:   [-18.986% -15.813% -12.496%] (p = 0.00 < 0.05)
+                        thrpt:  [+14.280% +18.783% +23.435%]
+                        Performance has improved.
+Found 18 outliers among 250 measurements (7.20%)
+  6 (2.40%) high mild
+  12 (4.80%) high severe
+verify/ascii/smoothutf8_slackbuf/67108864
+                        time:   [2.6683 ms 2.7481 ms 2.8293 ms]
+                        thrpt:  [22.090 GiB/s 22.743 GiB/s 23.423 GiB/s]
+                 change:
+                        time:   [-19.650% -16.201% -12.516%] (p = 0.00 < 0.05)
+                        thrpt:  [+14.307% +19.333% +24.455%]
+                        Performance has improved.
+Found 13 outliers among 250 measurements (5.20%)
+  2 (0.80%) high mild
+  11 (4.40%) high severe
+verify/ascii/smoothutf8/134217728
+                        time:   [7.0425 ms 7.2409 ms 7.4464 ms]
+                        thrpt:  [16.787 GiB/s 17.263 GiB/s 17.749 GiB/s]
+                 change:
+                        time:   [-36.448% -33.836% -30.995%] (p = 0.00 < 0.05)
+                        thrpt:  [+44.916% +51.140% +57.351%]
+                        Performance has improved.
+Found 11 outliers among 250 measurements (4.40%)
+  11 (4.40%) high severe
+verify/ascii/simdutf8/134217728
+                        time:   [7.0897 ms 7.2900 ms 7.5225 ms]
+                        thrpt:  [16.617 GiB/s 17.147 GiB/s 17.631 GiB/s]
+                 change:
+                        time:   [-3.9335% +0.1491% +4.3455%] (p = 0.91 > 0.05)
+                        thrpt:  [-4.1646% -0.1489% +4.0946%]
+                        No change in performance detected.
+Found 24 outliers among 250 measurements (9.60%)
+  11 (4.40%) high mild
+  13 (5.20%) high severe
+verify/ascii/std_from_utf8/134217728
+                        time:   [10.819 ms 11.120 ms 11.466 ms]
+                        thrpt:  [10.902 GiB/s 11.241 GiB/s 11.553 GiB/s]
+                 change:
+                        time:   [-4.4448% -0.4478% +3.5532%] (p = 0.83 > 0.05)
+                        thrpt:  [-3.4313% +0.4498% +4.6516%]
+                        No change in performance detected.
+Found 11 outliers among 250 measurements (4.40%)
+  11 (4.40%) high severe
+verify/ascii/smoothutf8_slack/134217728
+                        time:   [7.0678 ms 7.2686 ms 7.5022 ms]
+                        thrpt:  [16.662 GiB/s 17.197 GiB/s 17.686 GiB/s]
+                 change:
+                        time:   [-36.606% -34.028% -31.238%] (p = 0.00 < 0.05)
+                        thrpt:  [+45.429% +51.580% +57.744%]
+                        Performance has improved.
+Found 11 outliers among 250 measurements (4.40%)
+  11 (4.40%) high severe
+verify/ascii/smoothutf8_slackbuf/134217728
+                        time:   [7.0402 ms 7.2385 ms 7.4442 ms]
+                        thrpt:  [16.792 GiB/s 17.269 GiB/s 17.755 GiB/s]
+                 change:
+                        time:   [-36.717% -34.050% -31.292%] (p = 0.00 < 0.05)
+                        thrpt:  [+45.544% +51.629% +58.020%]
+                        Performance has improved.
+Found 15 outliers among 250 measurements (6.00%)
+  1 (0.40%) low mild
+  3 (1.20%) high mild
+  11 (4.40%) high severe
+verify/ascii/smoothutf8/268435456
+                        time:   [19.019 ms 19.525 ms 20.132 ms]
+                        thrpt:  [12.418 GiB/s 12.804 GiB/s 13.145 GiB/s]
+                 change:
+                        time:   [-32.439% -29.754% -26.984%] (p = 0.00 < 0.05)
+                        thrpt:  [+36.956% +42.356% +48.014%]
+                        Performance has improved.
+Found 9 outliers among 250 measurements (3.60%)
+  9 (3.60%) high severe
+verify/ascii/simdutf8/268435456
+                        time:   [19.347 ms 19.936 ms 20.551 ms]
+                        thrpt:  [12.165 GiB/s 12.540 GiB/s 12.922 GiB/s]
+                 change:
+                        time:   [-2.6955% +1.0717% +5.0835%] (p = 0.60 > 0.05)
+                        thrpt:  [-4.8376% -1.0604% +2.7702%]
+                        No change in performance detected.
+Found 11 outliers among 250 measurements (4.40%)
+  1 (0.40%) high mild
+  10 (4.00%) high severe
+verify/ascii/std_from_utf8/268435456
+                        time:   [27.819 ms 28.490 ms 29.253 ms]
+                        thrpt:  [8.5461 GiB/s 8.7749 GiB/s 8.9866 GiB/s]
+                 change:
+                        time:   [-4.9717% -1.6733% +1.8890%] (p = 0.35 > 0.05)
+                        thrpt:  [-1.8540% +1.7018% +5.2318%]
+                        No change in performance detected.
+Found 14 outliers among 250 measurements (5.60%)
+  14 (5.60%) high severe
+verify/ascii/smoothutf8_slack/268435456
+                        time:   [19.341 ms 19.810 ms 20.341 ms]
+                        thrpt:  [12.290 GiB/s 12.620 GiB/s 12.926 GiB/s]
+                 change:
+                        time:   [-33.291% -30.906% -28.525%] (p = 0.00 < 0.05)
+                        thrpt:  [+39.910% +44.731% +49.905%]
+                        Performance has improved.
+Found 15 outliers among 250 measurements (6.00%)
+  15 (6.00%) high severe
+verify/ascii/smoothutf8_slackbuf/268435456
+                        time:   [19.295 ms 19.763 ms 20.294 ms]
+                        thrpt:  [12.319 GiB/s 12.650 GiB/s 12.957 GiB/s]
+                 change:
+                        time:   [-33.501% -30.995% -28.488%] (p = 0.00 < 0.05)
+                        thrpt:  [+39.836% +44.918% +50.379%]
+                        Performance has improved.
+Found 15 outliers among 250 measurements (6.00%)
+  15 (6.00%) high severe
+verify/ascii/smoothutf8/536870912
+                        time:   [42.643 ms 43.845 ms 45.237 ms]
+                        thrpt:  [11.053 GiB/s 11.404 GiB/s 11.725 GiB/s]
+                 change:
+                        time:   [-30.200% -27.501% -24.569%] (p = 0.00 < 0.05)
+                        thrpt:  [+32.572% +37.932% +43.266%]
+                        Performance has improved.
+Found 11 outliers among 250 measurements (4.40%)
+  11 (4.40%) high severe
+verify/ascii/simdutf8/536870912
+                        time:   [42.937 ms 44.139 ms 45.537 ms]
+                        thrpt:  [10.980 GiB/s 11.328 GiB/s 11.645 GiB/s]
+                 change:
+                        time:   [-2.9263% +1.1059% +5.2916%] (p = 0.59 > 0.05)
+                        thrpt:  [-5.0257% -1.0938% +3.0145%]
+                        No change in performance detected.
+Found 11 outliers among 250 measurements (4.40%)
+  11 (4.40%) high severe
+verify/ascii/std_from_utf8/536870912
+                        time:   [61.057 ms 62.507 ms 64.119 ms]
+                        thrpt:  [7.7980 GiB/s 7.9991 GiB/s 8.1890 GiB/s]
+                 change:
+                        time:   [-2.1646% +1.3422% +4.9685%] (p = 0.46 > 0.05)
+                        thrpt:  [-4.7333% -1.3244% +2.2125%]
+                        No change in performance detected.
+Found 32 outliers among 250 measurements (12.80%)
+  16 (6.40%) low mild
+  16 (6.40%) high severe
+verify/ascii/smoothutf8_slack/536870912
+                        time:   [42.771 ms 43.978 ms 45.381 ms]
+                        thrpt:  [11.018 GiB/s 11.369 GiB/s 11.690 GiB/s]
+                 change:
+                        time:   [-31.320% -28.724% -25.957%] (p = 0.00 < 0.05)
+                        thrpt:  [+35.057% +40.300% +45.603%]
+                        Performance has improved.
+Found 11 outliers among 250 measurements (4.40%)
+  11 (4.40%) high severe
+verify/ascii/smoothutf8_slackbuf/536870912
+                        time:   [42.764 ms 43.965 ms 45.363 ms]
+                        thrpt:  [11.022 GiB/s 11.373 GiB/s 11.692 GiB/s]
+                 change:
+                        time:   [-31.670% -28.927% -26.187%] (p = 0.00 < 0.05)
+                        thrpt:  [+35.478% +40.701% +46.350%]
+                        Performance has improved.
+Found 12 outliers among 250 measurements (4.80%)
+  1 (0.40%) high mild
+  11 (4.40%) high severe
+
+=== END (01-simd-avx2.bench) ===

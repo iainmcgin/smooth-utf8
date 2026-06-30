@@ -1,13 +1,15 @@
 #!/usr/bin/env python3
-"""Parse criterion's stdout (e.g. from bench-on-metal.sh) into CSV.
+"""Parse criterion's stdout (e.g. a log from doc/bench-runs/) into CSV.
 
 Reads one or more `<baseline>=<logfile>` pairs and emits
-`baseline,impl,size,gibps` rows on stdout, taking the median from each
+`baseline,shape,impl,size,gibps` rows on stdout, taking the middle value
+(criterion's point estimate) from each
 `time: [low unit mid unit high unit]` line.
 
 Usage:
   python3 doc/parse-criterion-log.py \
-      portable=metal-portable.log simd_avx2=metal-simd_avx2.log \
+      portable=doc/bench-runs/run-20260629T192815Z-4/00-portable.stdout.txt \
+      simd_avx2=doc/bench-runs/run-20260629T192815Z-4/01-simd-fixed.stdout.txt \
       > doc/throughput-data.csv
 """
 import re

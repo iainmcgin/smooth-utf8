@@ -3,7 +3,8 @@
 //! shapes (all-ASCII, mixed, all-multibyte).
 //!
 //! Run locally for relative comparison only; for absolute numbers use a
-//! quieted bare-metal host (see `bench-on-metal.sh` in the dev guide).
+//! quieted dedicated bare-metal host (see the methodology section of
+//! `doc/BENCHMARKS.md`).
 // MSRV applies to the library; benches run on stable (see README).
 #![allow(clippy::incompatible_msrv)]
 

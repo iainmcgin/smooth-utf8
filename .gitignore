@@ -1,4 +1,5 @@
 /target
 /proptest-regressions
 /rr_out
+/metal-bench-results
 .lia.cache
