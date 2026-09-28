@@ -177,6 +177,11 @@ jobs:
     steps:
       - uses: actions/checkout@9c091bb21b7c1c1d1991bb908d89e4e9dddfe3e0 # v7.0.0
       - name: cargo verus verify
+        # A container job's default shell is `sh`, which has no pipefail, so
+        # the pipeline's status would be tee's and a verifier that exits
+        # non-zero would pass whenever its output holds the line grep looks
+        # for. `shell: bash` runs the script with `-eo pipefail`.
+        shell: bash
         run: |
           cargo verus verify --features verus 2>&1 | tee /tmp/verus.out
           # Fail if the count is anything other than the expected 84/0.
