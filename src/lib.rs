@@ -30,20 +30,27 @@
 //!
 //! - **`alloc`** — adds `SlackBuf::new_add_slack`, which appends the padding
 //!   to a `Vec<u8>` itself. Everything else stays no-alloc.
-//! - **`simdutf8`** — delegate inputs ≥ 128 bytes to
+//! - **`simdutf8`** — delegate inputs ≥ 128 bytes (64 on aarch64) to
 //!   [`simdutf8::basic::from_utf8`](https://docs.rs/simdutf8). Adds one
-//!   dependency. Below the threshold the verified path runs.
+//!   dependency. Below the threshold the crate's own validator runs: the
+//!   verified source, apart from the SIMD prefix scans in the next two items.
 //! - Building with `-C target-cpu=x86-64-v3` (or `native` on a Haswell+
 //!   machine) enables a 32-byte/iteration `movemask` ASCII prefix scan
 //!   (no runtime dispatch; not covered by the proofs below) and BMI2
 //!   `shrx` for the shift-DFA (~+40% on the multibyte path).
-//! - **`verus`** is verification-only (CI); it does not change runtime
-//!   behaviour and is not intended to be combined with `simdutf8`.
+//! - Every `aarch64` target that enables NEON (all except the
+//!   `-none-softfloat` ones) uses a 32-byte/iteration NEON ASCII prefix scan
+//!   (not covered by the proofs below).
+//! - **`verus`** is for the verification build in CI only. It selects the
+//!   SWAR prefix scan on every target and compiles the Verus-annotated
+//!   `SlackBuf` impl in place of the runtime one. It is not intended to be
+//!   combined with `simdutf8`.
 //!
 //! # Verification
 //!
-//! Under `--features verus` (portable 64-bit build, no `simdutf8`/`avx2`),
-//! Verus proves **functional correctness**: [`verify`] and [`verify_with_slack`]
+//! With `--features verus`, which selects the SWAR prefix scan on every
+//! target, and without `simdutf8`, Verus proves **functional correctness** of
+//! the 64-bit build: [`verify`] and [`verify_with_slack`]
 //! carry `ensures ret == is_valid_utf8(b@)`, where `spec::is_valid_utf8`
 //! is a direct transcription of Unicode §3.9 Table 3-7. Every bit-trick in
 //! the SWAR fast path and the multi-byte decoder is connected to that table
@@ -69,9 +76,11 @@
 //! Each tool's trusted base is what the other proves. The connecting step —
 //! that `&[u8]::as_ptr()` yields a pointer valid for `len()` initialized
 //! bytes — is the standard-library contract for slices. The
-//! `simdutf8`-feature delegation path, the `cfg(avx2)` prefix scan, and the
-//! `core::str::from_utf8` delegation on 32-bit targets are *not* covered by
-//! these proofs. [`from_utf8`]'s call to `from_utf8_unchecked` is justified by
+//! `simdutf8`-feature delegation path, the AVX2 and NEON prefix scans, the
+//! runtime `SlackBuf` methods (a hand-synchronized copy of the Verus-checked
+//! impl), and the `core::str::from_utf8` delegation on 32-bit targets are
+//! *not* covered by these proofs.
+//! [`from_utf8`]'s call to `from_utf8_unchecked` is justified by
 //! the functional-correctness proof of [`verify`], on the assumption that
 //! `spec::is_valid_utf8` coincides with Rust's `str` invariant — both are
 //! Unicode §3.9, but neither tool checks that equivalence.
